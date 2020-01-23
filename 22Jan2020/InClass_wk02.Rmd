@@ -6,7 +6,8 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(cache=TRUE, echo = TRUE, autodep = TRUE)
+#dep_auto()
 ```
 
 ```{r basicfcn, include=F}
@@ -29,7 +30,6 @@ str(baseball) #display structure of csv file (dataframe)
 #### Q2. print out the first 5 and the last 3 rows of the dataframe
 
 ```{r Q2}
-invisible(baseball <- data.frame(read.csv("BaseballHeightWeight.csv")))
 head(baseball, 5) #show first 5 rows
 tail(baseball, 3) #show last 3 rows
 ```
@@ -38,30 +38,33 @@ tail(baseball, 3) #show last 3 rows
 #### Q3. Change the headers/column names from Weight.pounds. to weight, from Height.inches. to height, and Age to age.
 
 ```{r Q3}
-invisible(library(tidyverse))
-invisible(baseball %>%  rename(
-    weight = Weight.pounds.,
-    height = Height.inches.,
-    age = Age
-    ))
+invisible(library(tidyverse)) #need tidyverse package to use rename
+invisible(
+    baseball <- baseball %>%  rename(
+        weight = Weight.pounds.,
+        height = Height.inches.,
+        age = Age
+        )
+    )
 ```
 
 
 #### Q4. Print out the first two lines again to see the new column names.
 
 ```{r Q4}
-invisible(baseball <- data.frame(read.csv("BaseballHeightWeight.csv")))
-invisible(library(tidyverse))
-baseball %>%  rename(
-    weight = Weight.pounds.,
-    height = Height.inches.,
-    age = Age
-    );
 head(baseball, 2) #show first 2 lines
 ```
 
 
 #### Q5. Find the statistics (summary) of the heights, weights, and ages of the players. Using complete sentences, give the reader these summary.
+
+```{r Q5}
+#summary(baseball)
+summary(baseball$height)
+summary(baseball$weight)
+summary(baseball$age)
+```
+######## The above code shows the summary of the players' heights, weights, and ages. ADD MORE 
 
 #### Q6. You should find an issue with the weight data with an NA value. Use the subset( ) function, select that data point (save as shyboy) and find out who the shy boy was.
 
@@ -79,6 +82,5 @@ head(baseball, 2) #show first 2 lines
 
 #### Q13. Obtain another subset with Team Washington and only players older than 28. How many are there in this veteran group?
 
-#### Q14. On the syllabus, next week we have our guest speaker Megan Potterbusch. What are the three links on the syllabus for her talk? Copy and paste them here.
-
 Put in your own answer here.
+
