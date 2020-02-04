@@ -1,0 +1,114 @@
+---
+title: "preliminary exploration of Olympics data"
+author: "Lucia Illari"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    code_folding: hide
+    number_sections: false
+    toc: yes
+    toc_depth: 2
+    toc_float: yes
+    df_print: paged
+  pdf_document:
+    toc: yes
+    toc_depth: '2'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, results = T )
+```
+
+```{r basicfcn, include=F}
+# Knit does not work with install.packages functions. Any install.packages statements in the RMD file needs to be commented out before knitting. 
+# And if the RMD is sent to another person/computer that requires installing the package, the user can remove the commenting and install the package.
+# Here, we use another option by introducting this convenient function, we named it loadPkg(), which uses install.packages() and require(). 
+# The function require() is similar to library(), except it returns a TRUE/FALSE value.
+# You can add quietly=T option to the require() function
+loadPkg = function(x) { if (!require(x,character.only=T, quietly =T)) { install.packages(x,dep=T,repos="http://cran.us.r-project.org"); if(!require(x,character.only=T)) stop("Package not found") } }
+```
+
+```{r Q1, include=T}
+loadPkg("readr")
+loadPkg("tidyr")
+athlete_events <- data.frame(read_csv("C:/Users/Squall/Documents/gradschool/classes/Spring 2020/DatSci/Project/athlete_events.csv/athlete_events.csv"))
+#ages <- athlete_events$Age
+#max(athlete_events$Age, na.rm = TRUE)
+oldAge <- subset(athlete_events, Age == max(athlete_events$Age, na.rm = TRUE))
+youngAge <- subset(athlete_events, Age == min(athlete_events$Age, na.rm = TRUE))
+oldAge
+youngAge
+shyAthletes <- subset(athlete_events, is.na(Age))
+shyAthletes
+
+```
+
+```{r}
+loadPkg("ggplot2")
+loadPkg("viridis")
+
+medalDat <- subset(athlete_events, !is.na(Medal))
+
+ggplot(athlete_events, aes(x=Medal), color = Team) + geom_bar(aes(y=(..count..)/sum(..count..)))
+```
+
+```{r}
+loadPkg("plyr")
+weightDat <- subset(athlete_events, !is.na(Weight))
+heightDat <- subset(athlete_events, !is.na(Height))
+
+muW <- ddply(weightDat, "Sex", summarise, grp.mean=mean(Weight), grp.variance=var(Weight), grp.standarddev=sd(Weight))
+muH <- ddply(heightDat, "Sex", summarise, grp.mean=mean(Height), grp.variance=var(Height), grp.standarddev=sd(Height))
+muW
+muH
+```
+
+```{r}
+p1 <- ggplot(weightDat, aes(x=Weight, color=Sex, fill=Sex)) + geom_histogram(alpha=0.5, binwidth = 5, aes(y=..density..)) + geom_density(alpha=0.6) + geom_vline(data=muW, aes(xintercept=grp.mean, color=Sex), linetype="dashed") +
+labs(title="Weight histogram plot",x="Weight(kg)", y = "Density")
+
+# Continuous colors
+#p1 + scale_color_brewer(palette="Paired") + scale_fill_brewer(palette="Paired") + theme_classic()+theme(legend.position="top")
+
+# Discrete colors
+#p1 + scale_color_brewer(palette="Dark2")+ scale_fill_brewer(palette="Dark2") + theme_minimal()+theme_classic()+theme(legend.position="top")
+
+# Gradient colors
+p1c <- p1 + scale_color_brewer(palette="Accent")+ scale_fill_brewer(palette="Accent") + theme_minimal()+theme(legend.position="top")
+
+p2 <- ggplot(heightDat, aes(x=Height, color=Sex, fill=Sex)) + geom_histogram(binwidth = 5, alpha=0.5, aes(y=..density..)) + geom_density(alpha=0.6) + geom_vline(data=muH, aes(xintercept=grp.mean, color=Sex), linetype="dashed") +
+labs(title="Height histogram plot",x="Height(cm)", y = "Density")
+
+# Continuous colors
+#p2 + scale_color_brewer(palette="Paired")+ scale_fill_brewer(palette="Paired") + theme_classic()+theme(legend.position="top")
+
+# Discrete colors
+#p2 + scale_color_brewer(palette="Dark2")+ scale_fill_brewer(palette="Dark2") + theme_minimal()+theme_classic()+theme(legend.position="top")
+# Gradient colors
+p2c <- p2 + scale_color_brewer(palette="Accent")+ scale_fill_brewer(palette="Accent") + 
+  theme_minimal()+theme(legend.position="top")
+
+loadPkg("gridExtra")
+grid.arrange(p1c, p2c, nrow = 2)
+```
+
+```{r}
+sexC <- data.frame(count(athlete_events, vars="Sex"))
+ageC <- data.frame(count(athlete_events, vars="Age"))
+nameC <- data.frame(count(athlete_events, vars="Name"))
+medalC <- data.frame(count(athlete_events, vars="Medal"))
+```
+
+```{r}
+head(nameC)
+sort.name <- nameC[order(-nameC$freq),]
+count(nameC$freq)
+sort.name
+```
+
+
+
+
+
+
+
