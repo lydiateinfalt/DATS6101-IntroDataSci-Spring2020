@@ -32,6 +32,11 @@ loadPkg = function(x) { if (!require(x,character.only=T, quietly =T)) { install.
 loadPkg("readr")
 loadPkg("tidyr")
 athlete_events <- data.frame(read_csv("C:/Users/Squall/Documents/gradschool/classes/Spring 2020/DatSci/Project/athlete_events.csv/athlete_events.csv"))
+
+summary(athlete_events)
+```
+
+```{r}
 #ages <- athlete_events$Age
 #max(athlete_events$Age, na.rm = TRUE)
 oldAge <- subset(athlete_events, Age == max(athlete_events$Age, na.rm = TRUE))
@@ -40,8 +45,8 @@ oldAge
 youngAge
 shyAthletes <- subset(athlete_events, is.na(Age))
 shyAthletes
-
 ```
+
 
 ```{r}
 loadPkg("ggplot2")
@@ -106,7 +111,7 @@ count(nameC$freq)
 sort.name
 ```
 
-
+just adding some text and code to try to push
 
 
 
