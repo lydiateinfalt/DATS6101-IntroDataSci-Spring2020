@@ -19,5 +19,7 @@ athletes <- read.csv("athlete_events.csv")
 head(athletes)
 na <- subset(athletes, is.na(Age))
 summary(athletes$Age)
+summary(athletes$Age)
+summary(athletes$Weight)
 ```
 
