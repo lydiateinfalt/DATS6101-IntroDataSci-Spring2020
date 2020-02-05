@@ -1,0 +1,100 @@
+---
+title: "DATS 6101 Spring 2020 Olympic Data EDA"
+author: "Izzy Illari"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: 
+  html_document:
+    theme: readable
+    toc: true
+    toc_float: yes
+    toc_depth: '2'
+    number_sections: false
+    keep_tex: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = F, results = T, message = F)
+options(scientific=T, digits = 3) 
+```
+
+```{r basicfcn, include=F}
+loadPkg = function(x) { if (!require(x,character.only=T, quietly =T)) { install.packages(x,dep=T,repos="http://cran.us.r-project.org"); if(!require(x,character.only=T)) stop("Package not found") } }
+# unload/detact package when done using it
+```
+
+```{r, echo=F}
+#Data taken from https://www.kaggle.com/heesoo37/120-years-of-olympic-history-athletes-and-results
+athlete_events <- data.frame(read.csv("/Users/iillari/Documents/gwu/spring2020/intro_dats/eda_project/120-years-of-olympic-history-athletes-and-results/athlete_events.csv"))
+noc_regions <- data.frame(read.csv("/Users/iillari/Documents/gwu/spring2020/intro_dats/eda_project/120-years-of-olympic-history-athletes-and-results/noc_regions.csv"))
+```
+
+# Summary of data
+
+Data from athlete_events.csv: 
+
+```{r, echo=F}
+summary(athlete_events)
+```
+
+Data from noc_regions.csv: 
+
+```{r, echo=F}
+summary(noc_regions)
+```
+
+# Year data
+
+```{r, echo=F}
+#wrangle data
+athlete_events_noNA <- na.omit(athlete_events)
+year_data <- na.omit(athlete_events$Year)
+#data by year
+data_2016 <- athlete_events_noNA[ athlete_events_noNA$Year == 2016, ]
+data_2006 <- athlete_events_noNA[ athlete_events_noNA$Year == 2006, ]
+data_1996 <- athlete_events_noNA[ athlete_events_noNA$Year == 1996, ]
+#get rgb color data using console
+#col2rgb(c("lightblue", "lightgreen", "pink"))
+#transparent colors
+light_blue <- rgb(173,216,230,max = 255, alpha = 80, names = "lt.blue")
+pink <- rgb(255,192,203, max = 255, alpha = 80, names = "lt.pink")
+light_green <- rgb(144,238,144, max = 255, alpha = 80, names = "lt.green")
+#overlapping histograms
+hist(data_2016$Weight, main= "Histogram of Olympic athlete's weights [kg] over time", xlab="weight [kg]", col = pink)
+hist(data_2006$Weight, col = light_green, add=T)
+hist(data_1996$Weight, col = light_blue, add=T)
+legend("topright", c("2016", "2006", "1996"), fill=c(pink, light_green, light_blue))
+box()
+```
+
+```{r, echo=F}
+#data_2016 <- athlete_events_noNA[ athlete_events_noNA$Year == 2016, ]
+data_2015 <- athlete_events_noNA[ athlete_events_noNA$Year == 2015, ]
+data_2014 <- athlete_events_noNA[ athlete_events_noNA$Year == 2014, ]
+data_2013 <- athlete_events_noNA[ athlete_events_noNA$Year == 2013, ]
+data_2012 <- athlete_events_noNA[ athlete_events_noNA$Year == 2012, ]
+data_2011 <- athlete_events_noNA[ athlete_events_noNA$Year == 2011, ]
+data_2010 <- athlete_events_noNA[ athlete_events_noNA$Year == 2010, ]
+data_2009 <- athlete_events_noNA[ athlete_events_noNA$Year == 2009, ]
+data_2008 <- athlete_events_noNA[ athlete_events_noNA$Year == 2008, ]
+data_2007 <- athlete_events_noNA[ athlete_events_noNA$Year == 2007, ]
+data_2006 <- athlete_events_noNA[ athlete_events_noNA$Year == 2006, ]
+data_2005 <- athlete_events_noNA[ athlete_events_noNA$Year == 2005, ]
+data_2004 <- athlete_events_noNA[ athlete_events_noNA$Year == 2004, ]
+data_2003 <- athlete_events_noNA[ athlete_events_noNA$Year == 2003, ]
+data_2002 <- athlete_events_noNA[ athlete_events_noNA$Year == 2002, ]
+data_2001 <- athlete_events_noNA[ athlete_events_noNA$Year == 2001, ]
+data_2000 <- athlete_events_noNA[ athlete_events_noNA$Year == 2000, ]
+data_1999 <- athlete_events_noNA[ athlete_events_noNA$Year == 1999, ]
+data_1998 <- athlete_events_noNA[ athlete_events_noNA$Year == 1998, ]
+data_1997 <- athlete_events_noNA[ athlete_events_noNA$Year == 1997, ]
+#data_1996 <- athlete_events_noNA[ athlete_events_noNA$Year == 1996, ]
+data_1995 <- athlete_events_noNA[ athlete_events_noNA$Year == 1995, ]
+data_1994 <- athlete_events_noNA[ athlete_events_noNA$Year == 1994, ]
+data_1993 <- athlete_events_noNA[ athlete_events_noNA$Year == 1993, ]
+data_1992 <- athlete_events_noNA[ athlete_events_noNA$Year == 1992, ]
+data_1991 <- athlete_events_noNA[ athlete_events_noNA$Year == 1991, ]
+data_1990 <- athlete_events_noNA[ athlete_events_noNA$Year == 1990, ]
+```
+
+
+
