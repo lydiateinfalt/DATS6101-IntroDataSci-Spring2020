@@ -67,33 +67,8 @@ box()
 ```
 
 ```{r, echo=F}
-#data_2016 <- athlete_events_noNA[ athlete_events_noNA$Year == 2016, ]
-data_2015 <- athlete_events_noNA[ athlete_events_noNA$Year == 2015, ]
-data_2014 <- athlete_events_noNA[ athlete_events_noNA$Year == 2014, ]
-data_2013 <- athlete_events_noNA[ athlete_events_noNA$Year == 2013, ]
-data_2012 <- athlete_events_noNA[ athlete_events_noNA$Year == 2012, ]
-data_2011 <- athlete_events_noNA[ athlete_events_noNA$Year == 2011, ]
-data_2010 <- athlete_events_noNA[ athlete_events_noNA$Year == 2010, ]
-data_2009 <- athlete_events_noNA[ athlete_events_noNA$Year == 2009, ]
-data_2008 <- athlete_events_noNA[ athlete_events_noNA$Year == 2008, ]
-data_2007 <- athlete_events_noNA[ athlete_events_noNA$Year == 2007, ]
-data_2006 <- athlete_events_noNA[ athlete_events_noNA$Year == 2006, ]
-data_2005 <- athlete_events_noNA[ athlete_events_noNA$Year == 2005, ]
-data_2004 <- athlete_events_noNA[ athlete_events_noNA$Year == 2004, ]
-data_2003 <- athlete_events_noNA[ athlete_events_noNA$Year == 2003, ]
-data_2002 <- athlete_events_noNA[ athlete_events_noNA$Year == 2002, ]
-data_2001 <- athlete_events_noNA[ athlete_events_noNA$Year == 2001, ]
-data_2000 <- athlete_events_noNA[ athlete_events_noNA$Year == 2000, ]
-data_1999 <- athlete_events_noNA[ athlete_events_noNA$Year == 1999, ]
-data_1998 <- athlete_events_noNA[ athlete_events_noNA$Year == 1998, ]
-data_1997 <- athlete_events_noNA[ athlete_events_noNA$Year == 1997, ]
-#data_1996 <- athlete_events_noNA[ athlete_events_noNA$Year == 1996, ]
-data_1995 <- athlete_events_noNA[ athlete_events_noNA$Year == 1995, ]
-data_1994 <- athlete_events_noNA[ athlete_events_noNA$Year == 1994, ]
-data_1993 <- athlete_events_noNA[ athlete_events_noNA$Year == 1993, ]
-data_1992 <- athlete_events_noNA[ athlete_events_noNA$Year == 1992, ]
-data_1991 <- athlete_events_noNA[ athlete_events_noNA$Year == 1991, ]
-data_1990 <- athlete_events_noNA[ athlete_events_noNA$Year == 1990, ]
+#create a list by years 
+data_year <- split(athlete_events_noNA, athlete_events_noNA$Year)
 ```
 
 
