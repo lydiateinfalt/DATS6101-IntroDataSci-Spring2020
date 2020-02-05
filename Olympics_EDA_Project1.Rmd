@@ -1,0 +1,23 @@
+---
+title: "Olympics_EDA"
+author: "LNT"
+date: "1/31/2020"
+output: html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r basicfcn, include=F}
+loadPkg = function(x) { if (!require(x,character.only=T, quietly =T)) { install.packages(x,dep=T,repos="http://cran.us.r-project.org"); if(!require(x,character.only=T, quietly = T)) stop("Package not found") } }
+```
+
+```{r Q1, include=T}
+# Load data
+# Since my RMD and csv files are in the same working directory, I do not need to give the full path to the csv file. Alternatively, you can use the functions getwd() and setwd() to handle it.
+athletes <- read.csv("athlete_events.csv") 
+head(athletes)
+na <- subset(athletes, is.na(Age))
+summary(athletes$Age)
+```
+
