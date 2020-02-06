@@ -21,5 +21,7 @@ na <- subset(athletes, is.na(Age))
 summary(athletes$Age)
 summary(athletes$Age)
 summary(athletes$Weight)
+
+## committing changes from R Studio to repo on Git
 ```
 
