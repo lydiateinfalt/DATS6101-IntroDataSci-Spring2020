@@ -14,7 +14,7 @@ loadPkg = function(x) { if (!require(x,character.only=T, quietly =T)) { install.
 
 ```{r Q1, include=T}
 # Load data
-# Since my RMD and csv files are in the same working directory, I do not need to give the full path to the csv file. Alternatively, you can use the functions getwd() and setwd() to handle it.
+# 
 athletes <- read.csv("athlete_events.csv") 
 head(athletes)
 na <- subset(athletes, is.na(Age))
@@ -24,4 +24,9 @@ summary(athletes$Weight)
 
 ## committing changes from R Studio to repo on Git
 ```
+```{r f1}
+gold_medals <- subset(olympics, olympics$Medal == "Gold")
+head(gold_medals)
+
+````
 
