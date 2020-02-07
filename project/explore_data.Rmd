@@ -73,7 +73,7 @@ Here I have split up the original data by putting the data by year into a list.
 ```{r list_year, echo=F}
 #create a list by years
 data_year <- split(athlete_events_noNA, athlete_events_noNA$Year)
-summary(data_year)
+#summary(data_year)
 hist(data_year[[35]]$Weight, main= "Histogram of Olympic athlete's weights [kg] over time", xlab="weight [kg]", col = pink)
 hist(data_year[[1]]$Weight, col = light_green, add=T)
 hist(data_year[[15]]$Weight, col = light_blue, add=T)
@@ -86,11 +86,13 @@ There are `r length(data_year)` years. Using my data now split by years, I was t
 ```{r over_time, echo=F}
 years <- names(data_year)
 mean_years_weight <- list()
+median_years_weight <- list()
 var_years_weight <- list()
 sd_years_weight <- list()
 for (i in 1:length(data_year)) {
-  cat("In year", i, " the mean is:", mean(data_year[[i]]$Weight), " and the std. dev. is:", sd(data_year[[i]]$Weight), "\n")
+  #cat("In year", i, " the mean is:", mean(data_year[[i]]$Weight), " and the std. dev. is:", sd(data_year[[i]]$Weight), "\n")
   mean_years_weight[[i]] <- mean(data_year[[i]]$Weight)
+  median_years_weight[[i]] <- median(data_year[[i]]$Weight)
   var_years_weight[[i]] <- var(data_year[[i]]$Weight)
   sd_years_weight[[i]] <- sd(data_year[[i]]$Weight)
 }  
@@ -99,16 +101,21 @@ list_year <- list(1896, 1900, 1904, 1906, 1908, 1912, 1920, 1924, 1928, 1932, 19
 
 # Scatter Plot: Average Weight Over Time
 
-```{r scatter_plot_years_weight, echo=F}
-year_weight <- do.call(rbind, Map(data.frame, Year=years, Mean_Weight=mean_years_weight, Var_Weight=var_years_weight, StdDev_Weight=sd_years_weight))
-plot(year_weight$Year, year_weight$Mean_Weight, main="Scatterplot of mean weight of Olympic athletes over time", xlab="Year", ylab="Mean Weight [kg]", ylim = range(c(year_weight$Mean_Weight-year_weight$StdDev_Weight, year_weight$Mean_Weight+year_weight$StdDev_Weight)), pch=19)
-#vertical error bars
-x0 <- list_year
-y0 <- year_weight$Mean_Weight-year_weight$StdDev_Weight
-x1 <- x0
-y1 <- year_weight$Mean_Weight+year_weight$StdDev_Weight
-#arrows(x0, y0, x1, y1, length=0.05, angle=90, code=3)
+```{r make_dataframe, echo=F}
+year_weight <- do.call(rbind, Map(data.frame, Year = years, Mean_Weight = mean_years_weight, Median_Weight = median_years_weight, Var_Weight = var_years_weight, StdDev_Weight = sd_years_weight))
 ```
+
+Here is a scatter plot made using the mean and median weights of all Olympic athletes over time.
+
+```{r scatter_plot_years_weight, echo=F}
+plot(year_weight$Year, year_weight$Mean_Weight, xlab = "Year", ylab = "Weight [kg]", main = "Scatterplot of avg. Olympic weights [kg] over time", ylim = range(c(year_weight$Mean_Weight-year_weight$StdDev_Weight, year_weight$Mean_Weight+year_weight$StdDev_Weight)), pch=20)
+#points(year_weight$Year, year_weight$Mean_Weight, pch = 20, col = "blue")
+points(year_weight$Year, year_weight$Median_Weight, pch = 20, col = "red")
+legend("topright", c("mean", "median"), fill=c("black", "red"))
+box()
+```
+
+Here is a scatter plot made using ggplot2 to include $\pm 1 \sigma$ for the error bars.
 
 ```{r tilt_tick_marks, echo=F, results="hide"}
 library(ggplot2)
@@ -136,6 +143,16 @@ theme(
 ```{r try_ggplot, echo=F}
 p1 <- ggplot(year_weight, aes(x= Year, y=Mean_Weight)) + geom_point(size=2) + geom_errorbar(aes(ymin = Mean_Weight-StdDev_Weight, ymax = Mean_Weight+StdDev_Weight))
 p1 + theme(axis.text.x = element_text(angle = -90))
+```
+
+# Separate weight by other categories (sex, event, etc...)
+
+```{r sep_by_gender, echo=F}
+for (i in 1:length(data_year)) {
+  women_data <- data_year[[i]][ which(data_year[[i]]$Sex == 'F'), ]
+  men_data <- data_year[[i]][ which(data_year[[i]]$Sex == 'M'), ]
+} 
+head(women_data)
 ```
 
 
