@@ -60,12 +60,16 @@ summary(gold_medals$bmi)
 summary(silver_medals$bmi)
 summary(bronze_medals$bmi)
 ```
+```{r loading,echo=F}
+
+```
 
 ## Gold Medal Athletes BMI
 ```{r gold, echo=F}
 
 boxplot(gold_medals$bmi, main="Gold Medal Athletes BMI", ylab="weight (lbs)", col='gold')
 hist(gold_medals$bmi, main="Gold Medal BMI", col = 'Gold' ) 
+
 ```
 ## Silver Medal Athletes BMI
 ```{r silver, echo =F}
@@ -79,4 +83,10 @@ hist(silver_medals$bmi, main="Silver Medal Athletes BMI", col = 'gray' )
 boxplot(bronze_medals$bmi, main="Bronze Medal Athletes BMI", ylab="BMI", col='brown')
 
 hist(bronze_medals$bmi, main="Bronze Medal Athletes BMI", col = 'brown' )
+```
+```{r scatter, echo=F}
+loadPkg("ggplot2")
+ggplot(data=gold_medals)+
+  geom_point(mapping = aes(x=Height, y=Weight, color=Season))+
+  ggtitle("Scatter plot of Gold Medalists Height vs Weight")
 ```
