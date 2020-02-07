@@ -16,17 +16,67 @@ loadPkg = function(x) { if (!require(x,character.only=T, quietly =T)) { install.
 # Load data
 # 
 athletes <- read.csv("athlete_events.csv") 
-head(athletes)
-na <- subset(athletes, is.na(Age))
-summary(athletes$Age)
-summary(athletes$Age)
-summary(athletes$Weight)
 
-## committing changes from R Studio to repo on Git
+colnames(athletes)
 ```
-```{r f1}
-gold_medals <- subset(olympics, olympics$Medal == "Gold")
-head(gold_medals)
+# Find the statistics (summary) of the heights, weights, and ages of all Olympic Athletes 
 
-````
+```{r HWA, echo=F} 
+summary(athletes$Height)
+summary(athletes$Weight)
+summary(athletes$Age)
+```
 
+## Height 
+# Gold, Silver and Bronze Medal Athletes
+```{r Height, echo=F}
+
+gold_medals <- subset(athletes, Medal == "Gold")
+silver_medals <- subset(athletes, Medal == "Silver")
+bronze_medals <- subset(athletes, Medal == "Bronze")
+
+gold_medals[["bmi"]] <- (gold_medals$Weight/gold_medals$Height/gold_medals$Height) * 10000
+
+silver_medals[["bmi"]] <- (silver_medals$Weight/silver_medals$Height/silver_medals$Height) * 10000
+
+bronze_medals[["bmi"]] <- (bronze_medals$Weight/bronze_medals$Height/bronze_medals$Height) * 10000
+summary(gold_medals$Height)
+summary(silver_medals$Height)
+summary(bronze_medals$Height)
+```
+
+# Weight
+## Gold, Silver and Bronze Medal Athletes
+```{r Weight, echo=F}
+summary(gold_medals$Weight)
+summary(silver_medals$Weight)
+summary(bronze_medals$Weight)
+```
+
+# BMI 
+## Gold, Silver and Bronze Medal Athletes
+```{r BMI}
+summary(gold_medals$bmi)
+summary(silver_medals$bmi)
+summary(bronze_medals$bmi)
+```
+
+## Gold Medal Athletes BMI
+```{r gold, echo=F}
+
+boxplot(gold_medals$bmi, main="Gold Medal Athletes BMI", ylab="weight (lbs)", col='gold')
+hist(gold_medals$bmi, main="Gold Medal BMI", col = 'Gold' ) 
+```
+## Silver Medal Athletes BMI
+```{r silver, echo =F}
+
+boxplot(silver_medals$bmi, main="Silver Medal Athletes BMI", ylab="BMI", col='gray')
+hist(silver_medals$bmi, main="Silver Medal Athletes BMI", col = 'gray' ) 
+```
+## Bronze Medal Athletes BMI
+```{r bronze, echo=F}
+
+boxplot(bronze_medals$bmi, main="Bronze Medal Athletes BMI", ylab="BMI", col='brown')
+
+hist(bronze_medals$bmi, main="Bronze Medal Athletes BMI", col = 'brown' )
+```
