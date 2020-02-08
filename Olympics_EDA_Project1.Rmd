@@ -18,6 +18,8 @@ loadPkg = function(x) { if (!require(x,character.only=T, quietly =T)) { install.
 athletes <- read.csv("athlete_events.csv") 
 
 colnames(athletes)
+loadPkg("dplyr")
+loadPkg("ggplot2")
 ```
 # Find the statistics (summary) of the heights, weights, and ages of all Olympic Athletes 
 
@@ -85,8 +87,38 @@ boxplot(bronze_medals$bmi, main="Bronze Medal Athletes BMI", ylab="BMI", col='br
 hist(bronze_medals$bmi, main="Bronze Medal Athletes BMI", col = 'brown' )
 ```
 ```{r scatter, echo=F}
-loadPkg("ggplot2")
-ggplot(data=gold_medals)+
-  geom_point(mapping = aes(x=Height, y=Weight, color=Season))+
+summer_gold <-subset(gold_medals, gold_medals$Season == "Summer" & gold_medals$Sport != "Art Competitions")
+winter_gold <- subset (gold_medals, gold_medals$Season == "Winter")
+ggplot(data=summer_gold)+
+  geom_point(mapping = aes(x=Weight, y=Height, color=Sport))+
   ggtitle("Scatter plot of Gold Medalists Height vs Weight")
+
+ggplot(data=winter_gold)+
+  geom_point(mapping = aes(x=Weight, y=Height, color=Sport))+
+  ggtitle("Scatter plot of Gold Medalists Height vs Weight")
+
+```
+
+# How do Olympic athletes with medals measure up in BMI?
+```{r removeDups, echo=F}
+
+medal_athletes <- subset(athletes, !is.na(Medal))
+dim(medal_athletes)
+medal_athletes[["BMI"]] <- (medal_athletes$Weight/gold_medals$Height/gold_medals$Height) * 10000
+
+
+
+medal_athletes <- medal_athletes %>% mutate(Category = case_when(
+  medal_athletes$BMI < 18.5 ~ "Underweight",
+  medal_athletes$BMI >= 18.5 & medal_athletes$BMI < 25 ~ "Normal Weight",
+  medal_athletes$BMI >= 25 & medal_athletes$BMI < 30 ~ "Overweight",
+  TRUE ~ "Obese"
+))
+                
+
+df <- medal_athletes[,c("ID", "Category")]
+df <- df %>% group_by(Category) %>% tally()
+df
+barplot(df$n, names.arg=c("Underweight", "Normal", "Overweight", "Obese"), col= "green")
+
 ```
