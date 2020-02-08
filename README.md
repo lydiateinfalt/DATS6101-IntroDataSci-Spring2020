@@ -2,6 +2,8 @@
 
 This repo contains a collection of Izzy Illari's work for DATS 6101 Spring 2020 at GWU. You may contact me at izzy@jlab.org or iti2103@gwu.edu for more info.
 
+Also included is the work on the class project with fellow teammates Lucia Illari (loi2102@gwu.edu), Lydia Teinfalt (lteinfalt@gwu.edu), Omar Qusous (oqusous@gwu.edu), and Obumneke Amadi (obumneke_amadi2@gwu.edu).
+
 Clone repo
 -----------
 
