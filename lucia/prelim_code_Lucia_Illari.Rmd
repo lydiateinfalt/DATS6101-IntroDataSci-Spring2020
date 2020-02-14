@@ -215,3 +215,12 @@ p2c <- p2 + scale_color_brewer(palette="Accent")+ scale_fill_brewer(palette="Acc
 
 grid.arrange(p1c, p2c, nrow = 2)
 ```
+
+
+
+
+
+
+
+
+comment comment comment
