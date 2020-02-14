@@ -1,0 +1,226 @@
+---
+title: "preliminary exploration of Olympics data"
+author: "Lucia Illari"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    code_folding: hide
+    number_sections: false
+    toc: no
+    toc_depth: 2
+    toc_float: yes
+    df_print: paged
+  pdf_document:
+    toc: yes
+    toc_depth: '2'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, results = T )
+```
+
+```{r basicfcn, include=F}
+loadPkg = function(x) { if (!require(x,character.only=T, quietly =T)) { install.packages(x,dep=T,repos="http://cran.us.r-project.org"); if(!require(x,character.only=T)) stop("Package not found") } }
+```
+
+Loading necessary packages.
+
+```{r packages, include = F}
+loadPkg("readr")
+loadPkg("tidyr")
+loadPkg("ggplot2")
+#loadPkg("viridis")
+loadPkg("gridExtra")
+loadPkg("corrplot")
+loadPkg("ggcorrplot")
+loadPkg("GGally")
+loadPkg("PerformanceAnalytics")
+#loadPkg("devtools")
+#loadPkg("tm")
+#loadPkg("SnowballC")
+loadPkg("wordcloud")
+loadPkg("RColorBrewer")
+```
+
+
+Loading data.
+
+```{r loadDat, include = F}
+athlete_events <- data.frame(read_csv("C:/Users/Squall/Documents/gradschool/classes/Spring 2020/DatSci/Project/athlete_events.csv/athlete_events.csv"))
+noc_regions <- data.frame(read_csv("~/gradschool/classes/Spring 2020/DatSci/Project/noc_regions.csv"))
+```
+
+Looking at data:
+
+```{r lookAT, include = T}
+dim(noc_regions)
+summary(athlete_events)
+```
+
+Integer encoding the NOC data for possible later usage:
+
+```{r addInt, include = T}
+NOC_Int <- c(as.numeric(as.factor(noc_regions$NOC)))
+noc_regions$NOC.Int <- NOC_Int
+head(noc_regions)
+```
+
+Looking at oldest and youngest athletes, finding athletes with NA age:
+
+```{r ages, include = T}
+#ages <- athlete_events$Age
+#max(athlete_events$Age, na.rm = TRUE)
+oldAge <- subset(athlete_events, Age == max(athlete_events$Age, na.rm = TRUE))
+youngAge <- subset(athlete_events, Age == min(athlete_events$Age, na.rm = TRUE))
+list(oldAge,youngAge)
+shyAthletes <- subset(athlete_events, is.na(Age))
+head(shyAthletes)
+```
+
+Counts of certain columns:
+
+```{r counts, include = T}
+loadPkg("dplyr")
+sexC <- athlete_events %>% count(Sex)
+ageC <- athlete_events %>% count(Age)
+nameC <- athlete_events %>% count(Name)
+medalC <- athlete_events %>% count(Medal)
+medalC
+```
+
+Barchart of medal data:
+
+```{r medalBarPlot, include = T}
+medalDat <- subset(athlete_events, !is.na(Medal))
+bp1 <- ggplot(athlete_events, aes(x=Medal), color = Team) + geom_bar(aes(y=(..count..)/sum(..count..)))
+bp2 <- ggplot(medalDat, aes(x=Medal), color = Team) + geom_bar(aes(y=(..count..)/sum(..count..)))
+
+grid.arrange(bp1, bp2, nrow = 1)
+```
+
+Integer encoding data so that it can be include in checking correlation:
+
+```{r integerEnc, include = T}
+mDat <- medalDat %>% mutate(Medal = replace(Medal, Medal == "Gold", 1))
+mDat <- mDat %>% mutate(Medal = replace(Medal, Medal == "Silver", 2))
+mDat <- mDat %>% mutate(Medal = replace(Medal, Medal == "Bronze", 3))
+mDat <- mDat %>% mutate(Sex = replace(Sex, Sex == "F", 1))
+mDat <- mDat %>% mutate(Sex = replace(Sex, Sex == "M", 2))
+mNOCi <- c(as.numeric(as.factor(mDat$NOC)))
+mSPi <- c(as.numeric(as.factor(mDat$Sport)))
+mDat$NOC.Int <- mNOCi
+mDat$Sport.Int <- mSPi
+head(mDat)
+```
+
+Columns that I want to keep for correlation plot:
+
+```{r keep, include = T}
+keeps <- c("ID","Sex","Age","Height","Weight","NOC.Int","Sport.Int","Medal")
+dmDat <- mDat[ , keeps, drop = FALSE]
+dmDat[,] <- sapply(dmDat[,], as.numeric)
+head(dmDat)
+```
+
+Correlation plot:
+
+```{r corrPlots, include = T}
+loadPkg("digest")
+corr = cor(dmDat, use="pairwise.complete.obs") 
+c1 <- corrplot.mixed(corr, title="Correlation Matrix", mar=c(0,0,1,0))
+c2 <- corrplot(corr, method="pie", type = "upper", order = "hclust", tl.col = "black", tl.srt = 45)
+#h1 <- heatmap(x=corr, symm=TRUE)
+
+p.mat <- cor_pmat(dmDat)
+gcorr1 <- ggcorrplot(corr, method = "circle", hc.order = TRUE)
+gcorr2 <- ggcorrplot(corr, method = "square", hc.order = TRUE)
+grid.arrange(gcorr1, gcorr2, nrow = 1)
+```
+
+Essentially very similar to above, just with package PerformanceAnalytics:
+
+```{r PerfAn, include = T}
+chart.Correlation(dmDat, histogram=TRUE, pch=19)
+```
+
+In the above plot:
+* The distribution of each variable is shown on the diagonal.
+* On the bottom of the diagonal : the bivariate scatter plots with a fitted line are displayed
+* On the top of the diagonal : the value of the correlation plus the significance level as stars
+* Each significance level is associated to a symbol : p-values(0, 0.001, 0.01, 0.05, 0.1, 1) <=> symbols(“***”, “**”, “*”, “.”, " “)
+
+Starting to look at names for analysis:
+
+```{r first_inst, include = F}
+loadPkg("stringr")
+first.instance <- athlete_events[match(unique(athlete_events$ID), athlete_events$ID),]
+last_names <- word(first.instance$Name,-1)
+first_names <- word(first.instance$Name,1)
+first.instance$First.Name <- first_names
+first.instance$Last.Name <- last_names
+```
+
+
+```{r namesCount, include = F}
+first.names.count <- first.instance %>% count(First.Name)
+#first.names.count <- data.frame(count(first.instance, vars="First.Name"))
+#sort.firstname <- first.names.count[order(first.names.count$freq, decreasing = TRUE),]
+
+last.names.count <- first.instance %>% count(Last.Name)
+#sort.lastname <- last.names.count[order(last.names.count$freq, decreasing = TRUE),]
+lastname.edit <- subset(last.names.count, !(last.names.count$Last.Name == "Jr.") & !(last.names.count$Last.Name == "Sr.") & !(last.names.count$Last.Name == "III"))
+```
+
+
+```{r wordcloudF, include = T}
+wordcloud(words = first.names.count$First.Name, freq = first.names.count$n, min.freq = 190, max.words=100, random.order=FALSE, rot.per=0.35, colors=brewer.pal(8, "Paired"))
+```
+
+```{r wordcloudL, include = T}
+wordcloud(words = lastname.edit$Last.Name, freq = lastname.edit$n, min.freq = 50, max.words=100, random.order=FALSE, rot.per=0.35, colors=brewer.pal(8, "Paired"))
+```
+
+
+```{r longest_name, include = T}
+val2 = which.max(nchar(athlete_events$Name))
+athlete_events[val2,]
+```
+
+
+Looking at height/weight info:
+
+```{r weight_height_info, include = T}
+loadPkg("plyr")
+weightDat <- subset(athlete_events, !is.na(Weight))
+heightDat <- subset(athlete_events, !is.na(Height))
+muW <- ddply(weightDat, "Sex", summarise, grp.mean=mean(Weight), grp.variance=var(Weight), grp.standarddev=sd(Weight))
+muH <- ddply(heightDat, "Sex", summarise, grp.mean=mean(Height), grp.variance=var(Height), grp.standarddev=sd(Height))
+muW
+muH
+```
+
+Standard histograms forheight/weight:
+
+```{r WHhist, include = T}
+p1 <- ggplot(weightDat, aes(x=Weight, color=Sex, fill=Sex)) + geom_histogram(alpha=0.5, binwidth = 5, aes(y=..density..), position="dodge") + geom_density(alpha=0.6) + geom_vline(data=muW, aes(xintercept=grp.mean, color=Sex), linetype="dashed") +
+labs(title="Weight histogram plot",x="Weight(kg)", y = "Density")
+
+p1c <- p1 + scale_color_brewer(palette="Accent")+ scale_fill_brewer(palette="Accent") + theme_minimal()+theme(legend.position="top")
+
+p2 <- ggplot(heightDat, aes(x=Height, color=Sex, fill=Sex)) + geom_histogram(binwidth = 5, alpha=0.5, aes(y=..density..), position="dodge") + geom_density(alpha=0.6) + geom_vline(data=muH, aes(xintercept=grp.mean, color=Sex), linetype="dashed") +
+labs(title="Height histogram plot",x="Height(cm)", y = "Density")
+
+p2c <- p2 + scale_color_brewer(palette="Accent")+ scale_fill_brewer(palette="Accent") + 
+  theme_minimal()+theme(legend.position="top")
+
+grid.arrange(p1c, p2c, nrow = 2)
+```
+
+
+
+
+
+
+
+
+comment comment comment
