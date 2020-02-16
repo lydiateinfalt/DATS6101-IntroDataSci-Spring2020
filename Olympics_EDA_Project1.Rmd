@@ -20,10 +20,13 @@ athletes <- read.csv("athlete_events.csv")
 colnames(athletes)
 loadPkg("dplyr")
 loadPkg("ggplot2")
+
 ```
 # Find the statistics (summary) of the heights, weights, and ages of all Olympic Athletes 
 
 ```{r HWA, echo=F} 
+
+dim(athletes)
 summary(athletes$Height)
 summary(athletes$Weight)
 summary(athletes$Age)
@@ -87,15 +90,21 @@ boxplot(bronze_medals$bmi, main="Bronze Medal Athletes BMI", ylab="BMI", col='br
 hist(bronze_medals$bmi, main="Bronze Medal Athletes BMI", col = 'brown' )
 ```
 ```{r scatter, echo=F}
-summer_gold <-subset(gold_medals, gold_medals$Season == "Summer" & gold_medals$Sport != "Art Competitions")
+
+summer_gold <-subset(gold_medals, gold_medals$Season == "Summer" & gold_medals$Sport %in% summer_sports)
 winter_gold <- subset (gold_medals, gold_medals$Season == "Winter")
+
+
+
 ggplot(data=summer_gold)+
   geom_point(mapping = aes(x=Weight, y=Height, color=Sport))+
-  ggtitle("Scatter plot of Gold Medalists Height vs Weight")
+  ggtitle("Scatter plot of Summer Gold Medalists Height vs Weight")
 
 ggplot(data=winter_gold)+
-  geom_point(mapping = aes(x=Weight, y=Height, color=Sport))+
-  ggtitle("Scatter plot of Gold Medalists Height vs Weight")
+  geom_point(mapping = aes(x=Weight, y=Height, color=Sport))
+  ggtitle("Scatter plot of Winter Gold Medalists Height vs Weight")
+
+
 
 ```
 
@@ -114,11 +123,42 @@ medal_athletes <- medal_athletes %>% mutate(Category = case_when(
   medal_athletes$BMI >= 25 & medal_athletes$BMI < 30 ~ "Overweight",
   TRUE ~ "Obese"
 ))
+
+ggplot(data=medal_athletes, aes(x=Category, y=Age, fill=Sex))+ geom_boxplot()
                 
 
 df <- medal_athletes[,c("ID", "Category")]
 df <- df %>% group_by(Category) %>% tally()
-df
+
 barplot(df$n, names.arg=c("Underweight", "Normal", "Overweight", "Obese"), col= "green")
+
+g <- ggplot(medal_athletes, aes(x=Age, y=BMI, fill=Sex))
+
+# Scatterplot
+g + geom_point() + 
+  geom_smooth(method="lm", se=F) +
+  labs( 
+       y="Age", 
+       x="BMI", 
+       title="Scatter plot of Age vs BMI")
+```
+```{r corr}
+loadPkg("ggcorrplot")
+df1 <- medal_athletes[,c("Age", "Height", "Weight", "BMI")]
+df1 <- na.omit(df1)
+
+
+# Correlation matrix
+corr <- round(cor(df1), 1)
+
+# Plot
+ggcorrplot(corr, hc.order = TRUE, 
+           type = "lower", 
+           lab = TRUE, 
+           #lab_size = 3, 
+           method="circle", 
+           title="medal_athletes", 
+           ggtheme=theme_bw)
+
 
 ```
