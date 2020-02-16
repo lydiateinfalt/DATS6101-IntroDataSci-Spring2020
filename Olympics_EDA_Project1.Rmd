@@ -31,11 +31,90 @@ summary(athletes$Height)
 summary(athletes$Weight)
 summary(athletes$Age)
 ```
+```{r weight}
+
+hist(athletes$Weight, main="Histogram of Olympians weight", xlab="Weight (kg)", col = 'green' )
+boxplot(athletes$Weight, main="Boxplot of Olympians weight", ylab="Weight (cm)", col = 'red' )
+qqnorm(athletes$Weight, main="Q-Q plot of Olympians weight") 
+qqline(athletes$Weight)
+#shapiro.test(athletes$Weight) # Unable to use Shapiro-Wilk test for normality because sample size must be between 3 and 5000
+ks.test(athletes$Weight,pnorm) # Kolmogorov-Smirnov Tests against normal distribution
+
+```
 
 ## Height 
-# Gold, Silver and Bronze Medal Athletes
 ```{r Height, echo=F}
+hist(athletes$Height, main="Histogram of Olympians Height", xlab="Height (cm)", col = 'blue' )
+boxplot(athletes$Height, main="Boxplot of Olympians Height", ylab="Height (cm)", col = 'orange' )
+qqnorm(athletes$Height, main="Q-Q plot of Olympians weight") 
+qqline(athletes$Height)
+#shapiro.test(athletes$Height) # Unable to use Shapiro-Wilk test for normality because sample size must be between 3 and 5000
+ks.test(athletes$Height,pnorm) # Kolmogorov-Smirnov Tests against normal distribution
 
+
+```
+## Age 
+```{r Age, echo=F}
+hist(athletes$Age, main="Histogram of Olympians Age", xlab="Age (years)", col = 'Purple' )
+boxplot(athletes$Age, main="Boxplot of Olympians Age", ylab="Age (cm)", col = 'Beige' )
+qqnorm(athletes$Age, main="Q-Q plot of Olympians Age") 
+qqline(athletes$Age)
+#shapiro.test(athletes$Height) # Unable to use Shapiro-Wilk test for normality because sample size must be between 3 and 5000
+ks.test(athletes$Age,pnorm) # Kolmogorov-Smirnov Tests against normal distribution
+
+
+```
+
+```{r EDA2}
+sd.height <- sd(athletes$Height, na.rm=TRUE)
+mean.height <- mean(athletes$Height, na.rm = TRUE)
+
+sd.weight <- sd(athletes$Weight, na.rm = TRUE)
+mean.weight <- mean(athletes$Weight, na.rm = TRUE)
+
+```
+Standard deviation height `r sd.height`
+Mean height `r mean.height`
+Standard deviation weight `r sd.weight`
+Mean Weight `r mean.weight`
+
+
+
+```{r, echo=TRUE}
+var(athletes$Height, na.rm = T)
+mean(athletes$Height, na.rm = T)
+sd(athletes$Height, na.rm = T)
+```
+
+```{r}
+z80height <- (80-mean.height)/sd.height
+z80height
+```
+
+```{r, echo = F}
+pnorm(z80height) # pnorm to find the probability
+qnorm(pnorm(z80height)) # qnorm to find the z-value, the inverse of pnorm.  In this case, the answer is just z80height
+```
+
+```{r, echo=TRUE}
+athletes$zheight = scale(athletes$Height)
+athletes$zweight = scale(athletes$Weight)
+```
+
+```{r, echo=F}
+mean(athletes$zheight, na.rm = TRUE)
+sd(athletes$zheight, na.rm = TRUE)
+
+summary(athletes$zheight)
+summary(athletes$zweight)
+```
+
+```{r, echo = F, message=FALSE, warning=FALSE}
+loadPkg("Hmisc") # this package contains the describe function below
+describe(athletes$Weight)
+describe(athletes$Height)
+```
+```{r medal}
 gold_medals <- subset(athletes, Medal == "Gold")
 silver_medals <- subset(athletes, Medal == "Silver")
 bronze_medals <- subset(athletes, Medal == "Bronze")
@@ -91,9 +170,8 @@ hist(bronze_medals$bmi, main="Bronze Medal Athletes BMI", col = 'brown' )
 ```
 ```{r scatter, echo=F}
 
-summer_gold <-subset(gold_medals, gold_medals$Season == "Summer" & gold_medals$Sport %in% summer_sports)
+summer_gold <- subset (gold_medals, gold_medals$Season == "Summer" && Sport != "Art Competitions")
 winter_gold <- subset (gold_medals, gold_medals$Season == "Winter")
-
 
 
 ggplot(data=summer_gold)+
