@@ -1,0 +1,272 @@
+---
+title: "Intro to DS - HW05"
+author: "Izzy Illari"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    code_folding: hide
+    # number_sections: true
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+    keep_tex: yes
+    theme: readable
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = F, results = T, message = F)
+options(scientific=T, digits = 3) 
+```
+
+```{r basicfcn, include=F}
+loadPkg = function(x) { if (!require(x,character.only=T, quietly =T)) { install.packages(x,dep=T,repos="http://cran.us.r-project.org"); if(!require(x,character.only=T)) stop("Package not found") } }
+loadPkg("knitr")
+```
+
+```{r lib_kabl, echo=F}
+library(knitr)
+library(kableExtra)
+```
+
+```{r outlierKD2}
+# Fix outliers
+outlierKD2 <- function(df, var, rm=FALSE, title, colVal) { 
+    #' Original outlierKD functino by By Klodian Dhana,
+    #' https://www.r-bloggers.com/identify-describe-plot-and-remove-the-outliers-from-the-dataset/
+    #' Modified to have third argument for removing outliers inwtead of interactive prompt, 
+    #' and after removing outlier, original df will not be changed. The function returns the new df, 
+    #' which can be saved as original df name if desired.
+    #' Check outliers, and option to remove them, save as a new dataframe. 
+    #' @param df The dataframe.
+    #' @param var The variable in the dataframe to be checked for outliers
+    #' @param rm Boolean. Whether to remove outliers or not.
+    #' @return The dataframe with outliers replaced by NA if rm==TRUE, or df if nothing changed
+    #' @examples
+    #' outlierKD2(mydf, height, FALSE)
+    #' mydf = outlierKD2(mydf, height, TRUE)
+    #' mydfnew = outlierKD2(mydf, height, TRUE)
+    dt = df # duplicate the dataframe for potential alteration
+    var_name <- eval(substitute(var),eval(dt))
+    na1 <- sum(is.na(var_name))
+    m1 <- mean(var_name, na.rm = T)
+    par(mfrow=c(2, 2), oma=c(0,0,3,0))
+    boxplot(var_name, main=paste("Boxplot with outliers\n", title), col = colVal, ylab = title)
+    hist(var_name, main=paste("Histogram without outliers\n", title), xlab=title, col= colVal, density = 10)
+    outlier <- boxplot.stats(var_name)$out
+    mo <- mean(outlier)
+    var_name <- ifelse(var_name %in% outlier, NA, var_name)
+    boxplot(var_name, main=paste("Boxplot without outliers\n", title), col = colVal, ylab = title)
+    hist(var_name, main=paste("Histogram without outliers\n", title), xlab=title, col= colVal, density = 10)
+    title(main=paste("Outlier Check of ", title), outer=TRUE)
+    na2 <- sum(is.na(var_name))
+    cat("Outliers identified:", na2 - na1, "\n")
+    cat("Propotion (%) of outliers:", round((na2 - na1) / sum(!is.na(var_name))*100, 1), "\n")
+    cat("Mean of the outliers:", round(mo, 2), "\n")
+    m2 <- mean(var_name, na.rm = T)
+    cat("Mean without removing outliers:", round(m1, 2), "\n")
+    cat("Mean if we remove outliers:", round(m2, 2), "\n")
+    
+    # response <- readline(prompt="Do you want to remove outliers and to replace with NA? [yes/no]: ")
+    # if(response == "y" | response == "yes"){
+    if(rm){
+        dt[as.character(substitute(var))] <- invisible(var_name)
+        #assign(as.character(as.list(match.call())$dt), dt, envir = .GlobalEnv)
+        cat("Outliers successfully removed", "\n")
+        return(invisible(dt))
+    } else {
+        cat("Nothing changed", "\n")
+        return(invisible(df))
+    }
+}
+
+# sample usage
+# mlb2 = outlierKD2(mlb, weight, TRUE) # This will remove weight outliers, replace those values by NA, then save it as a new dataframe mlb2
+# mlb = outlierKD2(mlb, weight, TRUE) # This will remove weight outliers, replace those values by NA, then REPLACE the dataframe mlb with the new one.
+# outlierKD2(mlb, weight, FALSE) # This will NOT remove weight outliers, but it will show the charts with and without outliers nonetheless. 
+# outlierKD2(mlb, weight) # same as above, as the last argument is optional, default = FALSE 
+```
+
+
+
+
+### Question 1
+
+**Same as last homework, import the dataset as Adata, and make sure the data type for the variables are set properly for categorical variables.**
+
+```{r q01}
+Adata <- data.frame(read.csv("LogRegAdmit.csv"))
+Adata$admit <- as.factor(Adata$admit)
+Adata$rank <- as.factor(Adata$rank)
+```
+
+Data imported. Now I check if I have successfully coerced the arguments of admit and rank to a factor. It is `r is.factor(Adata$admit)` that admit is a factor. It is `r is.factor(Adata$rank)` that rank is a factor. 
+
+### Question 2
+
+**Use the `outlierKD2()` function, remove the outliers for gre and gpa. Save the resulting dataframe as Adata2. You will need to do this in two steps, removing outliers for one variable at a time. How many NA values are in gre and in gpa with the resulting dataframe *Adata2*? **
+
+Using a modified version of the `outlierKD2()` function (I have added two more arguments to the function for title and color), I remove the outliers for gre and gpa and save the resulting dataframe as Adata2. 
+
+```{r Q2a}
+Adata2 = outlierKD2(Adata, gre, TRUE, "GRE scores", "lightcoral")
+Adata2 = outlierKD2(Adata2, gpa, TRUE, "GPA scores", "aquamarine")
+Adata2$admit <- as.factor(Adata2$admit)
+Adata2$rank <- as.factor(Adata2$rank)
+numNA_gre <- sum(is.na(Adata2$gre))
+numNA_gpa <- sum(is.na(Adata2$gpa))
+```
+
+The number of NA values in the the gre data is `r numNA_gre` and the number of NA values in the the gpa data is `r numNA_gpa`.   
+
+
+### Question 3
+
+**We were a little careless last time. Let us check for normality on the numerical variables. Let us use histogram (use `ggplot()`) and QQ-plot (use `qqnorm()`) to check the quantitative variables for the admitted and rejected subsets. Make a brief comment on the results. **
+
+First I will subset the data by admitted and rejected scores.
+
+```{r q3a}
+#subset data by admit or reject
+admit_data <- subset(Adata2, admit == 1, select = c("admit","gre","gpa","rank"))
+reject_data <- subset(Adata2, admit == 0, select = c("admit","gre","gpa","rank"))
+```
+
+Now that the data is subsetted I will plot the histograms and QQ-plots using ggplot. I have created a function called `gg.plot.fnct()` to plot both the admitted and rejected results. 
+
+```{r q3b}
+library(ggplot2)
+require(gridExtra)
+gg.plot.fnct <- function(df, dt, var, name, col.val, bwidth){
+    var_name1 <- eval(substitute(var),eval(df))
+    var_name2 <- eval(substitute(var),eval(dt))
+    hist1 <- ggplot(df, aes(x=var_name1)) + geom_histogram(binwidth=bwidth, alpha=0.3, color = col.val, fill=col.val) + labs(title=paste("Histogram of accepted", name, "scores"), x = paste("accepted", name, "scores")) 
+    hist2 <- ggplot(dt, aes(x=var_name2)) + geom_histogram(binwidth=bwidth, alpha=0.3, color = col.val, fill=col.val) + labs(title=paste("Histogram of rejected", name, "scores"), x = paste("rejected", name, "scores")) 
+  qq1 <- ggplot(df) + geom_qq(aes(sample = var_name1), color = col.val) + labs(title=paste("QQ-plot of accepted", name, "scores"))
+  qq2 <- ggplot(dt) + geom_qq(aes(sample = var_name2), color = col.val) + labs(title=paste("QQ-plot of rejected", name, "scores"))
+  grid.arrange(hist1, hist2, qq1, qq2, ncol=2, nrow=2)
+  }
+
+gg.plot.fnct(admit_data, reject_data, gre, "GRE", "lightcoral", 50)
+gg.plot.fnct(admit_data, reject_data, gpa, "GPA", "aquamarine", (4-2)/8)
+```
+
+
+### Question 4
+
+**Like last time, separate the two subsets again, for admitted and rejected. **
+
+The data was subsetted into admitted and rejected results in Question 3. 
+
+
+
+### Question 5
+
+**Does the two subgroups have different gre average and gpa average? Use the standard $\alpha$ = 0.05. What are the p-values for the test on gre and gpa? What are your conclusions from the tests? **
+
+```{r q5a}
+#with outliers data
+admit_Adata <- subset(Adata, admit == 1, select = c("admit","gre","gpa","rank"))
+reject_Adata <- subset(Adata, admit == 0, select = c("admit","gre","gpa","rank"))
+#get averages
+averages <- matrix(c(summary(admit_Adata$gre)["Mean"], summary(reject_Adata$gre)["Mean"], summary(admit_Adata$gpa)["Mean"], summary(reject_Adata$gpa)["Mean"], summary(admit_data$gre)["Mean"], summary(reject_data$gre)["Mean"], summary(admit_data$gpa)["Mean"], summary(reject_data$gpa)["Mean"]), ncol=2, nrow=4)
+#name rows and columns
+colnames(averages) <- c("With outliers","Without outliers")
+rownames(averages) <- c("accepted GRE score","rejected GRE score","accepted GPA score", "rejected GPA score")
+#table using kable
+averages %>%
+  kable() %>%
+  kable_styling(bootstrap_options = c("striped", "hover"))
+```
+
+The two groups for the accepted and rejected GRE and GPA scores do have different averages. This is also true when taking into account the data that does and does not include outliers. To find the $p$-values we can use the t-test as we were using it in the last homework. I will use a CI of 95%. 
+
+```{r q5b}
+#gre with vs without outliers and admitted vs rejected
+ttest_gre_yOutliers_95 = t.test(admit_Adata$gre, reject_Adata$gre, conf.level=0.95)
+ttest_gre_nOutliers_95 = t.test(admit_data$gre, reject_data$gre, conf.level=0.95)
+#gpa with vs without outliers and admitted vs rejected
+ttest_gpa_yOutliers_95 = t.test(admit_Adata$gpa, reject_Adata$gpa, conf.level=0.95)
+ttest_gpa_nOutliers_95 = t.test(admit_data$gpa, reject_data$gpa, conf.level=0.95)
+```
+
+Now I will check if the $p$-value is less than or equal to 0.05. 
+
+For GRE scores WITH outliers, the $p$-value (`r ttest_gre_yOutliers_95$p.value`) is less than or equal to 0.05: `r ttest_gre_yOutliers_95$p.value <= 0.05`  
+For GRE scores WITHOUT outliers, the $p$-value (`r ttest_gre_nOutliers_95$p.value`) is less than or equal to 0.05: `r ttest_gre_nOutliers_95$p.value <= 0.05`  
+
+For GPA scores WITH outliers, the $p$-value (`r ttest_gpa_yOutliers_95$p.value`) is less than or equal to 0.05: `r ttest_gpa_yOutliers_95$p.value <= 0.05`  
+For GPA scores WITHOUT outliers, the $p$-value (`r ttest_gpa_nOutliers_95$p.value`) is less than or equal to 0.05: `r ttest_gpa_nOutliers_95$p.value <= 0.05`
+
+This means that at the $\alpha = 0.05$ level these $p$-values reject the null hypothesis, and the difference between the means values of the rejected and admitted scores is statistically significant. 
+
+
+
+### Question 6
+
+**With the dataset Adata2, construct a contingency table between rank and admit. Are these two variables qualitative or quantitative? **
+
+We want to make a contingency table between rank and admit. This can be done with the `table()` function.
+
+```{r q6}
+table(Adata2$rank, Adata2$admit, dnn=c("Rank", "Admit")) 
+```
+
+Contingency tables are a type of frequency distribution table where two categorical variables are shown simultaneously. These two variables are qualitative. 
+
+
+
+### Question 7
+
+**Find out whether rank is independent of admission, according to the contingency table above. **
+
+To determine whether rank is independent of admission we can use the chi-square test with the contingency table. Contingency analysis is a hypothesis test to check whether two categorical variables are independent or not. The null hypothesis is that the two variables are independent and the alternative hypothesis is that the two variables are not independent.  
+
+```{r q7}
+chistat <- chisq.test(Adata2$rank, Adata2$admit)
+```
+
+Using an $\alpha$ of 0.05 we can use the $p$-value from our chi-square test. We see that our $p$-value is less than or equal to $\alpha$: `r chistat$p.value <= 0.05`. Because this returns TRUE, this means that our variables (rank and admission) are not independent, as expected.  
+
+
+### Question 8
+
+**From *Adata2*, test whether students from the four ranks have the same average gre or not. And also test if they have the same average gpa or not. Remember that if they are not all the same, you will need to follow up with a post hoc test. Make brief comments on your results.**
+
+First I will make boxplots with GRE and GPA scores for rank. I have created a function `plot_box()` to do this for the admitted and rejected data. The average gre and gpa score for each rank is show as a diamond point on the boxplot.  
+
+```{r q8a}
+plot_box <- function(data1, data2, name_xdata, name_ydata1, name_ydata2){
+    box1 <- ggplot(data1, aes(x=data1$rank, y=data1$gre, color = data1$rank)) + geom_boxplot() + stat_summary(fun.y=mean, geom="point", shape=23, size=4) + labs(title=paste("Boxplot of accepted\n", name_ydata1), x=name_xdata, y=name_ydata1) + theme(legend.title = element_blank())
+    box2 <- ggplot(data2, aes(x=data2$rank, y=data2$gre, color = data2$rank)) + geom_boxplot() + stat_summary(fun.y=mean, geom="point", shape=23, size=4) + labs(title=paste("Boxplot of rejected\n", name_ydata1), x=name_xdata, y=name_ydata1)  + theme(legend.title = element_blank())
+    box3 <- ggplot(data1, aes(x=data1$rank, y=data1$gpa, color = data1$rank)) + geom_boxplot() + stat_summary(fun.y=mean, geom="point", shape=23, size=4) + labs(title=paste("Boxplot of accepted\n", name_ydata2), x=name_xdata, y=name_ydata2) + theme(legend.title = element_blank())
+    box4 <- ggplot(data2, aes(x=data2$rank, y=data2$gpa, color = data2$rank)) + geom_boxplot() + stat_summary(fun.y=mean, geom="point", shape=23, size=4) + labs(title=paste("Boxplot of rejected\n", name_ydata2), x=name_xdata, y=name_ydata2)  + theme(legend.title = element_blank())
+  grid.arrange(box1, box2, box3, box4, ncol=2, nrow=2)
+}
+
+plot_box(admit_data, reject_data, "school rank", "gre scores", "gpa scores")
+```
+
+From a visual analysis of the boxplots it does not appear that the averages are the same. Following the class notes I perform the Post Hoc test (used to determine which mean/group of means is (are) significantly different from the others) and the Tukey's HSD Procedure (all pairs of sample means are to be tested).
+
+```{r q8b}
+aov_gre <- aov(gre ~ rank, data = Adata2)
+aov_gpa <- aov(gpa ~ rank, data = Adata2)
+```
+
+For the `aov()` test comparing the gre to the rank we get the $p$-value as `r summary(aov_gre)[[1]][["Pr(>F)"]][[1]]` and the F-statistic as `r summary(aov_gre)[[1]][["F value"]][[1]]`. We see that the $p$-value is less than 0.05: `r summary(aov_gre)[[1]][["Pr(>F)"]][[1]] <= 0.05`.  
+For the `aov()` test comparing the gpa to the rank we get the $p$-value as `r summary(aov_gpa)[[1]][["Pr(>F)"]][[1]]` and the F-statistic as `r summary(aov_gpa)[[1]][["F value"]][[1]]`. We see that the $p$-value is less than 0.05: `r summary(aov_gpa)[[1]][["Pr(>F)"]][[1]] <= 0.05`.
+
+For both of these we cannot reject the null hypothesis because the $p$-value is not small enough. Had the $p$-value been small enough then it would have indicated that some of the group means are different, but that does not appear to be the case here. We can also check the Tukey's HSD Procedure. 
+
+```{r q8c}
+tukey_gre <- TukeyHSD(aov_gre)
+tukey_gpa <- TukeyHSD(aov_gpa)
+tukey_gre
+tukey_gpa
+```
+
+We can see the adjusted $p$-values from the Tukey HSD Procedure there are none that are less than or equal to our $\alpha = 0.05$, meaning there are no $p$-values significant to reject the null hypothesis. This means that all these tests have said that the averages are all roughly the same. 
+
+
+
+
