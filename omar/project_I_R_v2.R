@@ -4,6 +4,7 @@ gdp <- read.csv('~/GWU - Blackboard/DSIntro_W_20/Project__I/gdp.csv')
 library(dplyr)
 library(ggplot2)
 library(tidyverse)
+# install.packages("rmdformats")
 olympics_df <- data.frame(data)
 pop_df <- data.frame(population)
 gdp_df <- data.frame(gdp)
@@ -123,9 +124,12 @@ olympics_mil$Medal[is.na(olympics_mil$Medal)] <- 0
 
 oly_gpby_NOC_Yr_Mdl <- olympics_mil %>% group_by(NOC, Year, Medal) %>% tally()
 oly_gpby_NOC_Yr_Mdl <- data.frame(oly_gpby_NOC_Yr_Mdl)
-View(oly_gpby_NOC_Yr_Mdl)
+# oly_gpby_NOC_Yr_Mdl$tot_medals <- oly_gpby_NOC_Yr_Mdl
+# View(oly_gpby_NOC_Yr_Mdl)
 
-?merge
+# aggregate(n ~ NOC, data=oly_gpby_NOC_Yr_Mdl, FUN=sum ifelse(oly_gpby_NOC_Yr_Mdl$Medal !=0),1,0))
+# ?aggregate
+# ?merge
 # Outer join: merge(x = df1, y = df2, by = "CustomerId", all = TRUE)
 # Left outer: merge(x = df1, y = df2, by = "CustomerId", all.x = TRUE)
 # Right outer: merge(x = df1, y = df2, by = "CustomerId", all.y = TRUE)
@@ -143,9 +147,16 @@ sum(is.na(pop_gdp_mil_df$Population))
 pop_gdp_mil_df[which(is.na(pop_gdp_mil_df$GDP)),]
 pop_gdp_mil_df <- pop_gdp_mil_df %>% filter(!is.na(GDP))
 pop_gdp_mil_df$GDPpC <- pop_gdp_mil_df$GDP/pop_gdp_mil_df$Population
-View(pop_gdp_mil_df)
 
-ggplot(, aes(x=NOC, y=n, fill=Medal)) + 
+view(medal_country_df)
+
+sum(pop_gdp_mil_df$n)
+
+ggplot(pop_gdp_mil_df, aes(x=NOC, y=100*(n/sum(n)))) + 
+  geom_bar(stat='identity') + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size=5))
+
+ggplot(pop_gdp_mil_df, aes(x=NOC, y=n)) + 
   geom_bar(stat='identity') + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1, size=5))
 
@@ -163,9 +174,6 @@ outlierReplace = function(dataframecol, outs, newValue = NA) {
           }
                     }
 }
-
-pop_gdp_mil_df$GDPpC[1000] %in% g_outs
-
 g_outs <- boxplot.stats(pop_gdp_mil_df$GDPpC)$out
 p_outs <- boxplot.stats(pop_gdp_mil_df$Population)$out
 
@@ -180,25 +188,33 @@ outlierReplace(plot_pop_gdp_mil_df$Population,
 length(plot_pop_gdp_mil_df$GDPpC)
 length(plot_pop_gdp_mil_df[is.na(plot_pop_gdp_mil_df$GDPpC)])
 
+mean(pop_gdp_mil_df$GDPpC)
 
 for(x in Year){
   print(x)
-  attach(plot_pop_gdp_mil_df %>% filter(Year == x))
+  attach(pop_gdp_mil_df %>% filter(Year == x))
   par(mfrow=c(3,1))
-  qqnorm(y=GDPpC, main=paste("Olympics participant countries' GDP per Capita QQ-plot for year ",x))
-  hist(GDPpC, main=paste("Olympics participant countries' GDP per Capita Histogram for year ",x), breaks =1000)
-  boxplot(GDPpC~NOC, pop_gdp_mil_df, main=paste("Olympics participant countries' GDP per Capita boxplot for year ",x))
+  qqnorm(y=GDPpC, 
+         main=paste("Olympics participant countries' GDP per Capita QQ-plot for year ",x))
+  hist(GDPpC, 
+       main=paste("Olympics participant countries' GDP per Capita Histogram for year ",x), breaks =10000)
+  boxplot(GDPpC~NOC, 
+          pop_gdp_mil_df, main=paste("Olympics participant countries' GDP per Capita boxplot for year ",x))
 }
 
-?hist
+
+mean(pop_gdp_mil_df$Population)
 
 for(x in Year){
     print(x)
     attach(plot_pop_gdp_mil_df %>% filter(Year == x))
     par(mfrow=c(3,1))
-  qqnorm(y=Population, main=paste("Olympics participant countries' population QQ-plot for year ",x))
-  hist(Population, main=paste("Olympics participant countries population Histogram for year ",x), breaks=1000000)
-  boxplot(Population~NOC, pop_gdp_mil_df, main=paste("Olympics participant countries population-NOC for year ",x))
+  qqnorm(y=Population, 
+         main=paste("Olympics participant countries' population QQ-plot for year ",x))
+  hist(Population, 
+       main=paste("Olympics participant countries population Histogram for year ",x), breaks=50000000)
+  boxplot(Population~NOC, pop_gdp_mil_df, 
+          main=paste("Olympics participant countries population-NOC for year ",x))
 }
 
 summary(pop_gdp_mil_df['n'])
