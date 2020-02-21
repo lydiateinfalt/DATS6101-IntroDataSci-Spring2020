@@ -40,3 +40,5 @@ loadPkg = function(x) { if (!require(x,character.only=T, quietly =T)) { install.
 # Variance/Standard Deviation/Histograms
 
 # Normality Tests
+
+# Conclusion
