@@ -62,7 +62,7 @@ Integer encoding the NOC data for possible later usage:
 ```{r addInt, include = T}
 NOC_Int <- c(as.numeric(as.factor(noc_regions$NOC)))
 noc_regions$NOC.Int <- NOC_Int
-head(noc_regions)
+noc_regions
 ```
 
 Looking at oldest and youngest athletes, finding athletes with NA age:
@@ -160,8 +160,46 @@ first.instance$First.Name <- first_names
 first.instance$Last.Name <- last_names
 ```
 
-```{r}
+
+```{r worldmap, include = T}
+loadPkg("tidyverse")
+loadPkg("rvest")
+loadPkg("magrittr")
+loadPkg("ggmap")
+
 first.inst.NOC <- first.instance %>% count(NOC)
+first.inst.NOC <- first.inst.NOC[order(first.inst.NOC$NOC),]
+names(first.inst.NOC)[names(first.inst.NOC) == "n"] <- "rank"
+first.inst.NOC$country = noc_regions$region
+first.inst.NOC
+
+map.world <- map_data("world")
+map.world_joined <- left_join(map.world, first.inst.NOC, by = c('region' = 'country'))
+map.world_joined <- map.world_joined %>% mutate(fill_flg = ifelse(is.na(rank),F,T))
+
+register_google(key = "AIzaSyCv1WHHXGBFuIRJBQ3G-5Ijuyft_8sKeHc")
+df.country_points <- data.frame(country = c("Singapore","luxembourg"),stringsAsFactors = F)
+glimpse(df.country_points)
+geocode.country_points <- geocode(df.country_points$country)
+df.country_points <- cbind(df.country_points,geocode.country_points)
+map.world_joined
+
+ggplot() + 
+  geom_polygon( data=map.world_joined, aes(x=long, y=lat, group=group),
+                color="black", fill="lightblue" )
+
+w <- ggplot()
+w <- w + geom_polygon( data=map.world_joined, 
+          aes(x=long, y=lat, group=group, fill = rank), 
+          color="white", size = 0.2) 
+w
+
+w <- w + scale_fill_continuous(name="Number of Olympic Athletes", 
+            low = "lightblue", high = "darkblue",limits = c(0,9700), 
+            breaks=c(970,1940,2910,3880,4850,5820,6790,7760,8730), na.value = "white") +
+
+          labs(title="Olympic Athletes from Around the Globe")
+w
 ```
 
 
