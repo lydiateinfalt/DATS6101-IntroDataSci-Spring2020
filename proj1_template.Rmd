@@ -34,11 +34,16 @@ loadPkg = function(x) { if (!require(x,character.only=T, quietly =T)) { install.
 # Summary of Dataset
 
 # Descriptive Stats
+## Map Plot
 
 # Graphical Representation of Data
 
-# Variance/Standard Deviation/Histograms
+## Word Cloud
+## Over Time
+
+# Variance/Standard Deviation
 
 # Normality Tests
+## Box/Hist/QQ
 
 # Conclusion
