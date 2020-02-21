@@ -37,6 +37,12 @@ loadPkg = function(x) { if (!require(x,character.only=T, quietly =T)) { install.
 
 # Graphical Representation of Data
 
+## Geographical Data
+
+## Name Word Cloud
+
+## Over Time
+
 # Variance/Standard Deviation/Histograms
 
 # Normality Tests
