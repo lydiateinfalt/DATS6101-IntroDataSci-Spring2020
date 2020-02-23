@@ -1,0 +1,128 @@
+---
+title: "Intro to DS - HW06 Linear Models"
+author: "me"
+date: "Feb, 2020"
+output:
+  html_document:
+    code_folding: hide
+    # number_sections: true
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+---
+
+```{r setup, include=FALSE}
+# some of common options (and the defaults) are: 
+# include=T, eval=T, echo=T, results='hide'/'asis',..., collapse=F, warning=T, message=T, error=T, cache=T, fig.width=6, fig.height=4, fig.dim=c(6,4) #inches, fig.align='left'/'center','right', 
+# knitr::opts_chunk$set(warning = F, results = 'markup', message = F)
+knitr::opts_chunk$set(warning = F, results = 'hide', message = F)
+# knitr::opts_chunk$set(include = F)
+# knitr::opts_chunk$set(echo = TRUE)
+options(scientific=T, digits = 3) 
+# options(scipen=9, digits = 3) 
+# ‘scipen’: integer. A penalty to be applied when deciding to print numeric values in fixed or exponential notation.  Positive values bias towards fixed and negative towards scientific notation: fixed notation will be preferred unless it is more than ‘scipen’ digits wider.
+# use scipen=999 to prevent scientific notation at all times
+```
+
+```{r basic, include=F}
+# use this function to conveniently load libraries and work smoothly with knitting
+# can add quietly=T option to the require() function
+loadPkg = function(pkg, character.only = FALSE) { 
+  if (!character.only) { pkg <- as.character(substitute(pkg)) }
+  if (!require(pkg,character.only=T, quietly =T)) {  install.packages(pkg,dep=T,repos="http://cran.us.r-project.org"); if(!require(pkg,character.only=T)) stop("Package not found") } 
+}
+loadPkg(knitr)
+
+# unload/detact package when done using it
+unloadPkg = function(pkg, character.only = FALSE) { 
+  if(!character.only) { pkg <- as.character(substitute(pkg)) } 
+  search_item <- paste("package", pkg,sep = ":") 
+  while(search_item %in% search()) { detach(search_item, unload = TRUE, character.only = TRUE) } 
+}
+
+```
+
+### Question 1  
+
+**Read “Pearson vs Spearman.pdf”**  
+
+Done. Good read.  
+
+
+### Question 2  
+**Import the data, call it `bikeorig.`**  
+The `Date` variable is probably imported as factor level variable. In any case, let us remove `Date`, `Casual.Users`, 
+and `Registered.Users` in the dataset and save it as a new datafame, call it `bike`. How many variables are in `bike`? 
+How many of them are imported as `int`? Feel free to rename longer variable names into shorter ones for convenience.  
+
+
+Answer answer answer. Lorem ipsum dolor sit amet...
+
+
+### Question 3  
+**Select only the subset with `Hour` between 15 and 17 inclusively.**  
+These are the afternoon rush hour data. How many observations are there?   
+
+Answer answer answer. Lorem ipsum dolor sit amet...
+
+
+### Question 4  
+**Show us some correlation among different pairs of variables.**  
+Find a nice way to present your result(s).  
+
+Answer answer answer. Lorem ipsum dolor sit amet...
+
+
+### Question 5  
+**Before building any models, we should make sure the variables are set up properly.**  
+Which ones should be recorded as categorical? Convert them now before we proceed to the model building. 
+Note: We could have done this right after importing the dataset. However, correlation plot will not work with categorical/factor variables. 
+We will need to exclude the factor level variables first, or find some other library that has corrplot-like function to do that automatically.)  
+
+Answer answer answer. Lorem ipsum dolor sit amet...
+
+
+### Question 6   
+**Build a linear model with 1 independent variable to predict the `Total Users`.**  
+Choose the variable with the strongest correlation coefficient. Make some short 
+comments on the coefficient values, their p-values, and the multiple R-squared value.  
+
+Answer answer answer. Lorem ipsum dolor sit amet...
+
+
+### Question 7   
+**Next, add a second variable to the model.**  
+Choose the variable with the next strongest correlation. When you have the model, 
+check the VIF values. If the VIF is higher than 5, discard this model, and try the 
+variable with the next strongest correlation until you find one that works 
+(with vif’s <5). Again, comment on the coefficient values, their p-values, 
+and the multiple R-squared value.  
+
+Answer answer answer. Lorem ipsum dolor sit amet...
+
+
+### Question 8  
+**We will try one more time as in the previous question, to add a third variable in our model.**  
+
+Answer answer answer. Lorem ipsum dolor sit amet...
+
+
+### Question 9  
+**For the 3-variable model you found, find the confidence intervals of the coefficients.**  
+
+Answer answer answer. Lorem ipsum dolor sit amet...
+
+
+### Question 10  
+**Use ANOVA to compare the three different models you found in previous questions.**  
+
+Answer answer answer. Lorem ipsum dolor sit amet...
+
+
+
+
+
+
