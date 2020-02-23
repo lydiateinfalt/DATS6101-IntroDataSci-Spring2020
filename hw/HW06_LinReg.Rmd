@@ -1,7 +1,7 @@
 ---
-title: "Intro to DS - HW06 Linear Models"
-author: "me"
-date: "Feb, 2020"
+title: "Intro to DS - HW06"
+author: "Izzy Illari"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
   html_document:
     code_folding: hide
@@ -9,16 +9,15 @@ output:
     toc: yes
     toc_depth: 3
     toc_float: yes
-  pdf_document:
-    toc: yes
-    toc_depth: '3'
+    keep_tex: yes
+    theme: readable
 ---
 
 ```{r setup, include=FALSE}
 # some of common options (and the defaults) are: 
 # include=T, eval=T, echo=T, results='hide'/'asis',..., collapse=F, warning=T, message=T, error=T, cache=T, fig.width=6, fig.height=4, fig.dim=c(6,4) #inches, fig.align='left'/'center','right', 
 # knitr::opts_chunk$set(warning = F, results = 'markup', message = F)
-knitr::opts_chunk$set(warning = F, results = 'hide', message = F)
+knitr::opts_chunk$set(warning = F, results = T, message = F)
 # knitr::opts_chunk$set(include = F)
 # knitr::opts_chunk$set(echo = TRUE)
 options(scientific=T, digits = 3) 
@@ -53,74 +52,247 @@ Done. Good read.
 
 
 ### Question 2  
-**Import the data, call it `bikeorig.`**  
-The `Date` variable is probably imported as factor level variable. In any case, let us remove `Date`, `Casual.Users`, 
-and `Registered.Users` in the dataset and save it as a new datafame, call it `bike`. How many variables are in `bike`? 
-How many of them are imported as `int`? Feel free to rename longer variable names into shorter ones for convenience.  
+**Import the data, call it `bikeorig.` The `Date` variable is probably imported as factor level variable. In any case, let us remove `Date`, `Casual.Users`, and `Registered.Users` in the dataset and save it as a new datafame, call it `bike`. How many variables are in `bike`? How many of them are imported as `int`? Feel free to rename longer variable names into shorter ones for convenience.**  
 
+```{r q2a}
+bikeorig <- data.frame(read.csv("bikedata.csv"))
+```
 
-Answer answer answer. Lorem ipsum dolor sit amet...
+I will check that the `Date` variable was imported as a factor level variable by using the `is.factor()` function. It is `r is.factor(bikeorig$Date)` that `Date` is a factor level variable. Now I will make a new dataframe with `Date`, `Casual.Users`, and `Registered.Users`. 
+
+```{r q2b}
+bike <- do.call(rbind, Map(data.frame, "Date"=bikeorig$Date, "Casual.Users"=bikeorig$Casual.Users, "Registered.Users"=bikeorig$Registered.Users))
+```
+
+Done. I also need to drop those same variables from `bikeorig`.  
+
+```{r q2c}
+drops <- c("Date", "Casual.Users", "Registered.Users")
+bikeorig <- bikeorig[ , !(names(bikeorig) %in% drops)]
+```
+
+Done. We should have 3 variables in bike, which we can check that it is: `r ncol(bike)`. In `bikeorig` we have `r ncol(bikeorig)` variables. Now we need to check how many of these variables are imported as int. We can use the `sapply()` function to tell us the class types of each of the variables in `bike` and `bikeorig`. Visually we can see how many variables are integers. We can also make a for loop to iterate through all the variables and increase a count variable for each time a variable is an integer. I will print this count variable.  
+
+```{r q2d}
+type1 <- sapply(bike, class)
+type1
+type2 <- sapply(bikeorig, class)
+type2
+count_int1 = as.integer(0)
+count_int2 = as.integer(0)
+for (i in 1:ncol(bike)) {
+  if (type1[[i]] == "integer") {
+    count_int1 = count_int1 + 1
+  }
+}
+for (i in 1:ncol(bikeorig)) {
+  if (type2[[i]] == "integer") {
+    count_int2 = count_int2 + 1
+  }
+}
+```
+
+There are `r count_int1` variables that are imported as int in `bike`. There are `r count_int2` variables that are imported as int in `bikeorig`. Done.
+
 
 
 ### Question 3  
-**Select only the subset with `Hour` between 15 and 17 inclusively.**  
-These are the afternoon rush hour data. How many observations are there?   
+**Select only the subset with `Hour` between 15 and 17 inclusively. These are the afternoon rush hour data. How many observations are there?**   
 
-Answer answer answer. Lorem ipsum dolor sit amet...
+```{r q3}
+rush_hour_data <- subset(bikeorig, Hour >= 15, select = c("Season", "Hour", "Holiday", "Day.of.the.Week", "Working.Day", "Weather.Type", "Temperature.F", "Temperature.Feels.F", "Humidity", "Wind.Speed", "Total.Users"))
+rush_hour_data <- subset(rush_hour_data, Hour <= 17, select = c("Season", "Hour", "Holiday", "Day.of.the.Week", "Working.Day", "Weather.Type", "Temperature.F", "Temperature.Feels.F", "Humidity", "Wind.Speed", "Total.Users"))
+afternoon_rush_observe <- nrow(rush_hour_data)
+```
+
+During the afternoon rush hour there are `r afternoon_rush_observe` observations. Done.
+
 
 
 ### Question 4  
-**Show us some correlation among different pairs of variables.**  
-Find a nice way to present your result(s).  
+**Show us some correlation among different pairs of variables. Find a nice way to present your result(s).**  
 
-Answer answer answer. Lorem ipsum dolor sit amet...
+We can use a correlation matrix to show the correlation of the variables in our dataframes. Here is a correlation matrix made using `bikeorig`. 
+
+```{r q4q}
+library(reshape2)
+library(ggplot2)
+result_bikeorig <- round(cor(bikeorig), 3)
+melted_cormat <- melt(result_bikeorig)
+ggplot(data = melted_cormat, aes(x=Var1, y=Var2, fill=value)) + geom_tile(color = "white") + scale_fill_gradient2(low = "blue", high = "red", mid = "white", midpoint = 0, limit = c(-1,1), space = "Lab", name="Pearson\nCorrelation") + theme_minimal() + theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 12, hjust = 1), axis.text.y = element_text(vjust = 1, size = 12, hjust = 1), axis.title.x = element_blank(), axis.title.y = element_blank()) + coord_fixed() + geom_text(aes(Var2, Var1, label = value), color = "black", size = 2)
+```
+
+Done.
 
 
 ### Question 5  
-**Before building any models, we should make sure the variables are set up properly.**  
-Which ones should be recorded as categorical? Convert them now before we proceed to the model building. 
-Note: We could have done this right after importing the dataset. However, correlation plot will not work with categorical/factor variables. 
-We will need to exclude the factor level variables first, or find some other library that has corrplot-like function to do that automatically.)  
+**Before building any models, we should make sure the variables are set up properly. Which ones should be recorded as categorical? Convert them now before we proceed to the model building. Note: We could have done this right after importing the dataset. However, correlation plot will not work with categorical/factor variables.  We will need to exclude the factor level variables first, or find some other library that has corrplot-like function to do that automatically.)**  
 
-Answer answer answer. Lorem ipsum dolor sit amet...
+The variables in `bikeorig` are `r names(bikeorig)`. Of these variables, the variables that should be quantitative and ints are Hour, Temperature.F, Temperature.Feels.F, Humidity, Wind.Speed, and Total.Users. These are variables that we should be measuring in numbers. The other variables a categorical: Season, Holiday, Day.of.the.Week, Working.Day, Weather.Type. These we will change. 
 
+```{r choose_categorical}
+bikeorig$Season <- as.factor(bikeorig$Season)
+bikeorig$Holiday <- as.factor(bikeorig$Holiday)
+bikeorig$Day.of.the.Week <- as.factor(bikeorig$Day.of.the.Week)
+bikeorig$Working.Day <- as.factor(bikeorig$Working.Day)
+bikeorig$Weather.Type <- as.factor(bikeorig$Weather.Type)
+sapply(bikeorig, class)
+```
+
+Now we have to remove the variables that are factors. 
+
+```{r remove_factors}
+bikeorig_factors <- do.call(rbind, Map(data.frame, "Season"=bikeorig$Season, "Holiday"=bikeorig$Holiday, "Day.of.the.Week"=bikeorig$Day.of.the.Week, "Working.Day"=bikeorig$Working.Day, "Weather.Type"=bikeorig$Weather.Type))
+drops2 <- c("Season","Holiday", "Day.of.the.Week", "Working.Day", "Weather.Type")
+bikeorig <- bikeorig[ , !(names(bikeorig) %in% drops2)]
+sapply(bikeorig, class)
+```
+
+Done.
 
 ### Question 6   
-**Build a linear model with 1 independent variable to predict the `Total Users`.**  
-Choose the variable with the strongest correlation coefficient. Make some short 
-comments on the coefficient values, their p-values, and the multiple R-squared value.  
+**Build a linear model with 1 independent variable to predict the `Total Users`. Choose the variable with the strongest correlation coefficient. Make some short comments on the coefficient values, their p-values, and the multiple R-squared value.**  
 
-Answer answer answer. Lorem ipsum dolor sit amet...
+We need to make a new correlation matric now that we've removed the categorical variables. 
+
+```{r new_correlation_matrix}
+result_bikeorig2 <- round(cor(bikeorig), 3)
+melted_cormat2 <- melt(result_bikeorig2)
+ggplot(data = melted_cormat2, aes(x=Var1, y=Var2, fill=value)) + geom_tile(color = "white") + scale_fill_gradient2(low = "blue", high = "red", mid = "white", midpoint = 0, limit = c(-1,1), space = "Lab", name="Pearson\nCorrelation") + theme_minimal() + theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 12, hjust = 1), axis.text.y = element_text(vjust = 1, size = 12, hjust = 1), axis.title.x = element_blank(), axis.title.y = element_blank()) + coord_fixed() + geom_text(aes(Var2, Var1, label = value), color = "black", size = 4)
+```
+
+Now we need to find the variable with the strongest correlation coefficient with `Total.Users` (technically the strongest would be with itself, but we're not going to use that). 
+
+```{r find_strongest_cor}
+index = as.integer(0) 
+temp = result_bikeorig2[30]
+start <- length(result_bikeorig2) - ncol(bikeorig)
+end <- length(result_bikeorig2)
+for (k in start:end) {
+  #print(result_bikeorig2[k])
+  if (temp < result_bikeorig2[k] & result_bikeorig2[k] != 1) {
+    index = k
+    temp = result_bikeorig2[k]
+  }
+}
+var_index <- index-start
+k <- arrayInd(var_index, dim(bikeorig))
+highest_cor <- colnames(bikeorig)[k[,1]]
+```
+
+The variable with the strongest correlation coefficient with `Total.Users` is `r highest_cor` with a value of `r temp`. Now we can make a linear model between `r highest_cor` and `Total.Users`. 
+
+```{r lin_mod1}
+lin_mod1 <- lm(bikeorig$Total.Users~bikeorig$Temperature.F,bikeorig)
+summary(lin_mod1)
+coef(lin_mod1)
+confint(lin_mod1)
+loadPkg("modelr")
+loadPkg("ggplot2")
+model.final.pred1 <- add_predictions(bikeorig, lin_mod1)
+ggplot(model.final.pred1,aes(Total.Users, pred)) + geom_point(aes(Total.Users, pred)) + geom_line(aes(pred), colour="red", size=1) + labs(title="Scatter plot of Total Users and \nfirst generated linear model from Temperature [F]")
+model.final.pred1 <- add_residuals(model.final.pred1, lin_mod1)
+ggplot(model.final.pred1, aes(resid)) + geom_freqpoly(binwidth=.05)
+```
+
+The first model call is `r format(summary(lin_mod1)$call)`.
+
+The coefficients and the p-values are found to be  
+intercept: `r format( lin_mod1$coefficients['(Intercept)'] )` (p: `r format( summary(lin_mod1)$coefficients[,4]['(Intercept)'] )`)  
+Temperature.F: `r format( lin_mod1$coefficients['bikeorig$Temperature.F'] )` (p: `r format( summary(lin_mod1)$coefficients[,4]['bikeorig$Temperature.F'] )`)    
+The r^2^ of the model is `r format( summary(lin_mod1)$r.squared )` and the adjusted r^2^ of the model is `r format( summary(lin_mod1)$adj.r.squared )`.
+
+The `lm()` in R reports whether or not our predictors are significant at $\alpha$ = 95%, and it also reports the $p$-values. We can see from the summary of the linear model and from the $p$-values that our intercept and `Temperature.F` have a *** significance level for `Total.Users`, and we have a small enough $p$-value to reject the null hypothesis. The R-squared statistic explains the degree to which our input variables explain the variation in the output/predicted variable. In our case we have `r format( summary(lin_mod1)$r.squared )` which means that only `r summary(lin_mod1)$r.squared*100`% of our output variable `Total.Users` can be explained by our input variable `Temperature.F`. However, the R-squared statistic has a problem in that it stays the same or increases with the addition of more variables, so we have to look at the adjusted R-squared statistic, which "penalizes" you for the addition of more variables that do not improve the fit. With one independent variable the R-squared and adjusted R-squared should be the same, which is TRUE here, but for more variables the gap between the two will increase if the fit is poor.    
+
 
 
 ### Question 7   
-**Next, add a second variable to the model.**  
-Choose the variable with the next strongest correlation. When you have the model, 
-check the VIF values. If the VIF is higher than 5, discard this model, and try the 
-variable with the next strongest correlation until you find one that works 
-(with vif’s <5). Again, comment on the coefficient values, their p-values, 
-and the multiple R-squared value.  
+**Next, add a second variable to the model. Choose the variable with the next strongest correlation. When you have the model, check the VIF values. If the VIF is higher than 5, discard this model, and try the variable with the next strongest correlation until you find one that works (with vif’s <5). Again, comment on the coefficient values, their p-values, and the multiple R-squared value.**  
 
-Answer answer answer. Lorem ipsum dolor sit amet...
+The variable with the next strongest correlation is `Temperature.Feels.F`. I will add it to the model. 
+
+```{r lin_mod2}
+lin_mod2 <- lm(bikeorig$Total.Users~bikeorig$Temperature.F+bikeorig$Temperature.Feels.F,bikeorig)
+summary(lin_mod2)
+coef(lin_mod2)
+confint(lin_mod2)
+model.final.pred <- add_predictions(bikeorig, lin_mod2)
+ggplot(model.final.pred,aes(Total.Users, pred)) + geom_point(aes(Total.Users, pred)) + geom_line(aes(pred), colour="red", size=1) + labs(title="Scatter plot of Total Users and second generated linear model \nfrom Temperature [F] + Temperature.Feels [F]")
+model.final.pred <- add_residuals(model.final.pred, lin_mod2)
+ggplot(model.final.pred, aes(resid)) + geom_freqpoly(binwidth=.05)
+loadPkg("car")
+vif(lin_mod2)
+```
+
+Since the VIF is larger than 5, we must discard our model and try another variable with the next strongest correlation. From our correlation matrix, this would be `Hour`. I'm going to try a model with just `Hour` and then `Hour`+`Temperature.F`. 
+
+```{r lin_mod34}
+lin_mod3 <- lm(bikeorig$Total.Users~bikeorig$Hour,bikeorig)
+summary(lin_mod3)
+lin_mod4 <- lm(bikeorig$Total.Users~bikeorig$Temperature.F+bikeorig$Hour,bikeorig)
+summary(lin_mod4)
+vif(lin_mod4)
+model.final.pred2 <- add_predictions(bikeorig, lin_mod4)
+ggplot(model.final.pred2,aes(Total.Users, pred)) + geom_point(aes(Total.Users, pred)) + geom_line(aes(pred), colour="red", size=1) + labs(title="Scatter plot of Total Users and second generated linear model \nfrom Temperature [F] + Hour")
+model.final.pred2 <- add_residuals(model.final.pred2, lin_mod4)
+ggplot(model.final.pred2, aes(resid)) + geom_freqpoly(binwidth=.05)
+```
+
+It appears that for our model call `r format(summary(lin_mod4)$call)` we have VIF of `r vif(lin_mod4)`.
+
+The coefficients and the p-values are found to be  
+intercept: `r format( lin_mod4$coefficients['(Intercept)'] )` (p: `r format( summary(lin_mod4)$coefficients[,4]['(Intercept)'] )`)  
+Temperature.F: `r format( lin_mod4$coefficients['bikeorig$Temperature.F'] )` (p: `r format( summary(lin_mod4)$coefficients[,4]['bikeorig$Temperature.F'] )`)   
+Hour: `r format( lin_mod4$coefficients['bikeorig$Hour'] )` (p: `r format( summary(lin_mod4)$coefficients[,4]['bikeorig$Hour'] )`)  
+The r^2^ of the model is `r format( summary(lin_mod4)$r.squared )` and the adjusted r^2^ of the model is `r format( summary(lin_mod4)$adj.r.squared )`. 
+
+All 3 of our variables (intercept, `Temperature.F` and `Hour`) have *** and we can thus reject the null hypothesis. The adjusted R-square value means that `r  summary(lin_mod4)$adj.r.squared*100`% of our output is described by our input.  
 
 
 ### Question 8  
 **We will try one more time as in the previous question, to add a third variable in our model.**  
 
-Answer answer answer. Lorem ipsum dolor sit amet...
+The variable with the next strongest correlation is `Humidity`. I will add this variable to the model. 
 
+```{r lin_mod5}
+lin_mod5 <- lm(bikeorig$Total.Users~bikeorig$Temperature.F+bikeorig$Hour+bikeorig$Humidity,bikeorig)
+summary(lin_mod5)
+vif(lin_mod5)
+model.final.pred3 <- add_predictions(bikeorig, lin_mod5)
+ggplot(model.final.pred3,aes(Total.Users, pred)) + geom_point(aes(Total.Users, pred)) + geom_line(aes(pred), colour="red", size=1) + labs(title="Scatter plot of Total Users and second generated linear model \nfrom Temperature [F] + Hour")
+model.final.pred3 <- add_residuals(model.final.pred3, lin_mod5)
+ggplot(model.final.pred3, aes(resid)) + geom_freqpoly(binwidth=.05)
+```
+
+It appears that for our model call `r format(summary(lin_mod5)$call)` we have VIF of `r vif(lin_mod5)`.
+
+The coefficients and the p-values are found to be  
+intercept: `r format( lin_mod5$coefficients['(Intercept)'] )` (p: `r format( summary(lin_mod5)$coefficients[,4]['(Intercept)'] )`)  
+Temperature.F: `r format( lin_mod5$coefficients['bikeorig$Temperature.F'] )` (p: `r format( summary(lin_mod5)$coefficients[,4]['bikeorig$Temperature.F'] )`)   
+Hour: `r format( lin_mod5$coefficients['bikeorig$Hour'] )` (p: `r format( summary(lin_mod5)$coefficients[,4]['bikeorig$Hour'] )`)  
+Humidity: `r format( lin_mod5$coefficients['bikeorig$Humidity'] )` (p: `r format( summary(lin_mod5)$coefficients[,4]['bikeorig$Humidity'] )`)  
+The r^2^ of the model is `r format( summary(lin_mod5)$r.squared )` and the adjusted r^2^ of the model is `r format( summary(lin_mod5)$adj.r.squared )`. 
+
+3 of our variables (`Temperature.F`, `Hour`, and `Humidity`) have *** and we can thus reject the null hypothesis. The adjusted R-square value means that `r  summary(lin_mod5)$adj.r.squared*100`% of our output is described by our input.
 
 ### Question 9  
 **For the 3-variable model you found, find the confidence intervals of the coefficients.**  
 
-Answer answer answer. Lorem ipsum dolor sit amet...
+The confidence intervals for the coefficients are
+
+```{r conf_int}
+confint(lin_mod5)
+```
 
 
 ### Question 10  
 **Use ANOVA to compare the three different models you found in previous questions.**  
 
-Answer answer answer. Lorem ipsum dolor sit amet...
+```{r anova_test}
+anova(lin_mod1, lin_mod4, lin_mod5)
+```
 
+The ANOVA/F-test is used for nested models to tell you whether a more complex model is preferred over the simpler model. In this scenario we can look at the $p$-value and see that in the 2 variable model is preferred to the 1-variable model ($p$-value = `r anova(lin_mod1,lin_mod4)$"Pr(>F)"[2]`), and then the 3-variable model is preferred to the 2-variable model ($p$-value = `r anova(lin_mod4,lin_mod5)$"Pr(>F)"[2]`). 
 
 
 
