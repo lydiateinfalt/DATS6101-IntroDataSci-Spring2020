@@ -1,4 +1,4 @@
-----
+---
 title: "Olympic Data"
 author: "team 010100"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
