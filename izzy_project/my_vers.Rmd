@@ -1,0 +1,594 @@
+----
+title: "Olympic Data"
+author: "team 010100"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:  
+    rmdformats::readthedown:
+      toc_float: true
+      number_sections: true
+      code_folding: hide
+      keep_tex: yes
+---
+
+
+```{r setup, echo=FALSE, cache=FALSE}
+library(knitr)
+library(rmdformats)
+
+## Global options
+options(max.print="75", scipen = 999, digits = 3, big.mark=",", warn = -1)
+opts_chunk$set(echo=FALSE,
+	             cache=TRUE,
+               prompt=FALSE,
+               tidy=TRUE,
+               comment=NA,
+               message=FALSE,
+               warning=FALSE)
+opts_knit$set(width=75)
+```
+
+```{r basicfunct, include=FALSE}
+loadPkg = function(x) { if (!require(x,character.only=T, quietly =T)) { install.packages(x,dep=T,repos="http://cran.us.r-project.org"); if(!require(x,character.only=T)) stop("Package not found") } }
+```
+
+```{r libraries}
+library(ggplot2)
+require(gridExtra)
+library(kableExtra)
+```
+
+![](tokyo_2020.png)
+
+# Introduction
+
+Team 010100 are the following members: Obumneke Amadi, Izzy Illari, Lucia Illari, Omar Qusous, and Lydia Teinfalt. You may find our work over on [GitHub](https://github.com/IzzyIllari/DATS6101-Spring2020-IntroDataSci).
+
+With the 2020 Olympics beginning this July in Tokyo we felt that a relevant discussion to have would be `What makes an Olympian`? What can we say about Olympians? Have there been any general trends amongst Olympians? What does the Olympic population look like? These questions are all suited to EDA, and with these questions in mind we went to see if we could find data on Olympians that would be readily available for us to analyze. Eventually our question morphed into the following: **are there any specific characteristics (i.e. age, weight, height, BMI, country of origin) that could be used to describe an Olympian in general?** 
+
+We were able to find a dataset called `120 years of Olympic history: athletes and results` on Kaggle over here: [https://www.kaggle.com/heesoo37/120-years-of-olympic-history-athletes-and-results](https://www.kaggle.com/heesoo37/120-years-of-olympic-history-athletes-and-results). This historical dataset includes all Olympic Games from Athens 1896 to Rio 2016, which was scraped from [https://www.sports-reference.com/](https://www.sports-reference.com/). This data was compiled by a group of Olympic historians and statisticians. All of these individuals are members of the International Society of Olympic Historians (ISOH) and have been working on this project since the late 1990s.
+
+The report is organized as follows:
+
+1. Summary of Dataset
+2. others
+
+
+# Summary of Dataset
+
+The data looks like the following:
+
+```{r input_data}
+athlete_events <- data.frame(read.csv("athlete_events.csv"))
+noc_regions <- data.frame(read.csv("noc_regions.csv"))
+summary(athlete_events)
+str(athlete_events)
+```
+
+The athlete events data has `r ncol(athlete_events)` columns and `r nrow(athlete_events)` rows/entries, for a total of `r ncol(athlete_events)*nrow(athlete_events)` individual data points. In `athelete_events` each row corresponds to an individual athlete competing in an individual Olympic event. The variables are the following:
+
+1. ID: Unique number for each athlete
+2. Name: Athlete's name
+3. Sex: M or F
+4. Age: Integer
+5. Height: centimeters
+6. Weight: kilograms
+7. Team: Team name
+8. NOC: National Olympic Committee 3-letter code
+9. Games: Year and season
+10. Year: Integer
+11. Season: Summer or Winter
+12. City: Host city
+13. Sport
+14. Event
+15. Medal: Gold, Silver, Bronze, or NA
+
+To prepare our data for EDA we dropped the Olympic event: Art Sculpting. NAs were also removed. 
+
+```{r remove_NAs}
+athlete_events_noNA <- na.omit(athlete_events)
+data_sport <- split(athlete_events_noNA, athlete_events_noNA$Sport)
+```
+
+
+# Descriptive Stats
+
+# Graphical Representation of Data
+
+## Geographical Data
+
+## Name Word Cloud
+
+## Over Time
+
+We wanted to see the changes in Olympians for the top 10 events (in terms of how many Olympians were recorded for the sport) over the years. Below are the top 10 events:  
+
+```{r top_ten, echo=F}
+list_sports <- as.data.frame(table(athlete_events_noNA$Sport))[1]
+sport_counts <- as.data.frame(table(athlete_events_noNA$Sport))[2]
+count_sports_data <- do.call(rbind, Map(data.frame, "sport.names" = list_sports, "sport.counts" = sport_counts))
+sort_count_sports_data <- count_sports_data[order(-count_sports_data$sport.counts),]
+sort_count_sports_data[2:11,]
+top10 <- sort_count_sports_data[2:11,][1]
+```
+
+In list form:
+
+1. Swimming
+2. Rowing
+3. Ice Hockey
+4. Hockey
+5. Gymnastics
+6. Fencing
+7. Football
+8. Canoeing
+9. Basketball
+10. Wrestling
+
+```{r over_time, echo=F}
+# Swimming
+data_Swimming_gender <- split(data_sport$Swimming, data_sport$Swimming$Sex)
+data_Swimming_F_year <- split(data_Swimming_gender$F, data_Swimming_gender$F$Year)
+data_Swimming_M_year <- split(data_Swimming_gender$"M", data_Swimming_gender$"M"$Year)
+years_F_Swimming <- names(data_Swimming_F_year)
+years_M_Swimming <- names(data_Swimming_M_year)
+mean_years_weight_F_Swimming <- list()
+sd_years_weight_F_Swimming <- list()
+mean_years_height_F_Swimming <- list()
+sd_years_height_F_Swimming <- list()
+mean_years_weight_M_Swimming <- list()
+sd_years_weight_M_Swimming <- list()
+mean_years_height_M_Swimming <- list()
+sd_years_height_M_Swimming <- list()
+# women data
+for (i in 1:length(data_Swimming_F_year)) {
+	mean_years_weight_F_Swimming[[i]] <- mean(data_Swimming_F_year[[i]]$Weight)
+	sd_years_weight_F_Swimming[[i]] <- sd(data_Swimming_F_year[[i]]$Weight)
+	mean_years_height_F_Swimming[[i]] <- mean(data_Swimming_F_year[[i]]$Height)
+	sd_years_height_F_Swimming[[i]] <- sd(data_Swimming_F_year[[i]]$Height)
+}
+# men data
+for (i in 1:length(data_Swimming_M_year)) {
+	mean_years_weight_M_Swimming[[i]] <- mean(data_Swimming_M_year[[i]]$Weight)
+	sd_years_weight_M_Swimming[[i]] <- sd(data_Swimming_M_year[[i]]$Weight)
+	mean_years_height_M_Swimming[[i]] <- mean(data_Swimming_M_year[[i]]$Height)
+	sd_years_height_M_Swimming[[i]] <- sd(data_Swimming_M_year[[i]]$Height)
+}
+# make data frames
+Swimming_F_data <- do.call(rbind, Map(data.frame, Year = years_F_Swimming, Mean_Weight = mean_years_weight_F_Swimming, StdDev_Weight = sd_years_weight_F_Swimming, Mean_Height = mean_years_height_F_Swimming, StdDev_Height = sd_years_height_F_Swimming))
+Swimming_M_data <- do.call(rbind, Map(data.frame, Year = years_M_Swimming, Mean_Weight = mean_years_weight_F_Swimming, StdDev_Weight = sd_years_weight_F_Swimming, Mean_Height = mean_years_height_F_Swimming, StdDev_Height = sd_years_height_F_Swimming))
+# Rowing
+data_Rowing_gender <- split(data_sport$Rowing, data_sport$Rowing$Sex)
+data_Rowing_F_year <- split(data_Rowing_gender$F, data_Rowing_gender$F$Year)
+data_Rowing_M_year <- split(data_Rowing_gender$"M", data_Rowing_gender$"M"$Year)
+years_F_Rowing <- names(data_Rowing_F_year)
+years_M_Rowing <- names(data_Rowing_M_year)
+mean_years_weight_F_Rowing <- list()
+sd_years_weight_F_Rowing <- list()
+mean_years_height_F_Rowing <- list()
+sd_years_height_F_Rowing <- list()
+mean_years_weight_M_Rowing <- list()
+sd_years_weight_M_Rowing <- list()
+mean_years_height_M_Rowing <- list()
+sd_years_height_M_Rowing <- list()
+# women data
+for (i in 1:length(data_Rowing_F_year)) {
+	mean_years_weight_F_Rowing[[i]] <- mean(data_Rowing_F_year[[i]]$Weight)
+	sd_years_weight_F_Rowing[[i]] <- sd(data_Rowing_F_year[[i]]$Weight)
+	mean_years_height_F_Rowing[[i]] <- mean(data_Rowing_F_year[[i]]$Height)
+	sd_years_height_F_Rowing[[i]] <- sd(data_Rowing_F_year[[i]]$Height)
+}
+# men data
+for (i in 1:length(data_Rowing_M_year)) {
+	mean_years_weight_M_Rowing[[i]] <- mean(data_Rowing_M_year[[i]]$Weight)
+	sd_years_weight_M_Rowing[[i]] <- sd(data_Rowing_M_year[[i]]$Weight)
+	mean_years_height_M_Rowing[[i]] <- mean(data_Rowing_M_year[[i]]$Height)
+	sd_years_height_M_Rowing[[i]] <- sd(data_Rowing_M_year[[i]]$Height)
+}
+# make data frames
+Rowing_F_data <- do.call(rbind, Map(data.frame, Year = years_F_Rowing, Mean_Weight = mean_years_weight_F_Rowing, StdDev_Weight = sd_years_weight_F_Rowing, Mean_Height = mean_years_height_F_Rowing, StdDev_Height = sd_years_height_F_Rowing))
+Rowing_M_data <- do.call(rbind, Map(data.frame, Year = years_M_Rowing, Mean_Weight = mean_years_weight_F_Rowing, StdDev_Weight = sd_years_weight_F_Rowing, Mean_Height = mean_years_height_F_Rowing, StdDev_Height = sd_years_height_F_Rowing))
+# Ice.Hockey
+data_Ice.Hockey_gender <- split(data_sport$"Ice Hockey", data_sport$"Ice Hockey"$Sex)
+data_Ice.Hockey_F_year <- split(data_Ice.Hockey_gender$F, data_Ice.Hockey_gender$F$Year)
+data_Ice.Hockey_M_year <- split(data_Ice.Hockey_gender$"M", data_Ice.Hockey_gender$"M"$Year)
+years_F_Ice.Hockey <- names(data_Ice.Hockey_F_year)
+years_M_Ice.Hockey <- names(data_Ice.Hockey_M_year)
+mean_years_weight_F_Ice.Hockey <- list()
+sd_years_weight_F_Ice.Hockey <- list()
+mean_years_height_F_Ice.Hockey <- list()
+sd_years_height_F_Ice.Hockey <- list()
+mean_years_weight_M_Ice.Hockey <- list()
+sd_years_weight_M_Ice.Hockey <- list()
+mean_years_height_M_Ice.Hockey <- list()
+sd_years_height_M_Ice.Hockey <- list()
+# women data
+for (i in 1:length(data_Ice.Hockey_F_year)) {
+	mean_years_weight_F_Ice.Hockey[[i]] <- mean(data_Ice.Hockey_F_year[[i]]$Weight)
+	sd_years_weight_F_Ice.Hockey[[i]] <- sd(data_Ice.Hockey_F_year[[i]]$Weight)
+	mean_years_height_F_Ice.Hockey[[i]] <- mean(data_Ice.Hockey_F_year[[i]]$Height)
+	sd_years_height_F_Ice.Hockey[[i]] <- sd(data_Ice.Hockey_F_year[[i]]$Height)
+}
+# men data
+for (i in 1:length(data_Ice.Hockey_M_year)) {
+	mean_years_weight_M_Ice.Hockey[[i]] <- mean(data_Ice.Hockey_M_year[[i]]$Weight)
+	sd_years_weight_M_Ice.Hockey[[i]] <- sd(data_Ice.Hockey_M_year[[i]]$Weight)
+	mean_years_height_M_Ice.Hockey[[i]] <- mean(data_Ice.Hockey_M_year[[i]]$Height)
+	sd_years_height_M_Ice.Hockey[[i]] <- sd(data_Ice.Hockey_M_year[[i]]$Height)
+}
+# make data frames
+Ice.Hockey_F_data <- do.call(rbind, Map(data.frame, Year = years_F_Ice.Hockey, Mean_Weight = mean_years_weight_F_Ice.Hockey, StdDev_Weight = sd_years_weight_F_Ice.Hockey, Mean_Height = mean_years_height_F_Ice.Hockey, StdDev_Height = sd_years_height_F_Ice.Hockey))
+Ice.Hockey_M_data <- do.call(rbind, Map(data.frame, Year = years_M_Ice.Hockey, Mean_Weight = mean_years_weight_F_Ice.Hockey, StdDev_Weight = sd_years_weight_F_Ice.Hockey, Mean_Height = mean_years_height_F_Ice.Hockey, StdDev_Height = sd_years_height_F_Ice.Hockey))
+# Hockey
+data_Hockey_gender <- split(data_sport$Hockey, data_sport$Hockey$Sex)
+data_Hockey_F_year <- split(data_Hockey_gender$F, data_Hockey_gender$F$Year)
+data_Hockey_M_year <- split(data_Hockey_gender$"M", data_Hockey_gender$"M"$Year)
+years_F_Hockey <- names(data_Hockey_F_year)
+years_M_Hockey <- names(data_Hockey_M_year)
+mean_years_weight_F_Hockey <- list()
+sd_years_weight_F_Hockey <- list()
+mean_years_height_F_Hockey <- list()
+sd_years_height_F_Hockey <- list()
+mean_years_weight_M_Hockey <- list()
+sd_years_weight_M_Hockey <- list()
+mean_years_height_M_Hockey <- list()
+sd_years_height_M_Hockey <- list()
+# women data
+for (i in 1:length(data_Hockey_F_year)) {
+	mean_years_weight_F_Hockey[[i]] <- mean(data_Hockey_F_year[[i]]$Weight)
+	sd_years_weight_F_Hockey[[i]] <- sd(data_Hockey_F_year[[i]]$Weight)
+	mean_years_height_F_Hockey[[i]] <- mean(data_Hockey_F_year[[i]]$Height)
+	sd_years_height_F_Hockey[[i]] <- sd(data_Hockey_F_year[[i]]$Height)
+}
+# men data
+for (i in 1:length(data_Hockey_M_year)) {
+	mean_years_weight_M_Hockey[[i]] <- mean(data_Hockey_M_year[[i]]$Weight)
+	sd_years_weight_M_Hockey[[i]] <- sd(data_Hockey_M_year[[i]]$Weight)
+	mean_years_height_M_Hockey[[i]] <- mean(data_Hockey_M_year[[i]]$Height)
+	sd_years_height_M_Hockey[[i]] <- sd(data_Hockey_M_year[[i]]$Height)
+}
+# make data frames
+Hockey_F_data <- do.call(rbind, Map(data.frame, Year = years_F_Hockey, Mean_Weight = mean_years_weight_F_Hockey, StdDev_Weight = sd_years_weight_F_Hockey, Mean_Height = mean_years_height_F_Hockey, StdDev_Height = sd_years_height_F_Hockey))
+Hockey_M_data <- do.call(rbind, Map(data.frame, Year = years_M_Hockey, Mean_Weight = mean_years_weight_F_Hockey, StdDev_Weight = sd_years_weight_F_Hockey, Mean_Height = mean_years_height_F_Hockey, StdDev_Height = sd_years_height_F_Hockey))
+# Gymnastics
+data_Gymnastics_gender <- split(data_sport$Gymnastics, data_sport$Gymnastics$Sex)
+data_Gymnastics_F_year <- split(data_Gymnastics_gender$F, data_Gymnastics_gender$F$Year)
+data_Gymnastics_M_year <- split(data_Gymnastics_gender$"M", data_Gymnastics_gender$"M"$Year)
+years_F_Gymnastics <- names(data_Gymnastics_F_year)
+years_M_Gymnastics <- names(data_Gymnastics_M_year)
+mean_years_weight_F_Gymnastics <- list()
+sd_years_weight_F_Gymnastics <- list()
+mean_years_height_F_Gymnastics <- list()
+sd_years_height_F_Gymnastics <- list()
+mean_years_weight_M_Gymnastics <- list()
+sd_years_weight_M_Gymnastics <- list()
+mean_years_height_M_Gymnastics <- list()
+sd_years_height_M_Gymnastics <- list()
+# women data
+for (i in 1:length(data_Gymnastics_F_year)) {
+	mean_years_weight_F_Gymnastics[[i]] <- mean(data_Gymnastics_F_year[[i]]$Weight)
+	sd_years_weight_F_Gymnastics[[i]] <- sd(data_Gymnastics_F_year[[i]]$Weight)
+	mean_years_height_F_Gymnastics[[i]] <- mean(data_Gymnastics_F_year[[i]]$Height)
+	sd_years_height_F_Gymnastics[[i]] <- sd(data_Gymnastics_F_year[[i]]$Height)
+}
+# men data
+for (i in 1:length(data_Gymnastics_M_year)) {
+	mean_years_weight_M_Gymnastics[[i]] <- mean(data_Gymnastics_M_year[[i]]$Weight)
+	sd_years_weight_M_Gymnastics[[i]] <- sd(data_Gymnastics_M_year[[i]]$Weight)
+	mean_years_height_M_Gymnastics[[i]] <- mean(data_Gymnastics_M_year[[i]]$Height)
+	sd_years_height_M_Gymnastics[[i]] <- sd(data_Gymnastics_M_year[[i]]$Height)
+}
+# make data frames
+Gymnastics_F_data <- do.call(rbind, Map(data.frame, Year = years_F_Gymnastics, Mean_Weight = mean_years_weight_F_Gymnastics, StdDev_Weight = sd_years_weight_F_Gymnastics, Mean_Height = mean_years_height_F_Gymnastics, StdDev_Height = sd_years_height_F_Gymnastics))
+Gymnastics_M_data <- do.call(rbind, Map(data.frame, Year = years_M_Gymnastics, Mean_Weight = mean_years_weight_F_Gymnastics, StdDev_Weight = sd_years_weight_F_Gymnastics, Mean_Height = mean_years_height_F_Gymnastics, StdDev_Height = sd_years_height_F_Gymnastics))
+# Fencing
+data_Fencing_gender <- split(data_sport$Fencing, data_sport$Fencing$Sex)
+data_Fencing_F_year <- split(data_Fencing_gender$F, data_Fencing_gender$F$Year)
+data_Fencing_M_year <- split(data_Fencing_gender$"M", data_Fencing_gender$"M"$Year)
+years_F_Fencing <- names(data_Fencing_F_year)
+years_M_Fencing <- names(data_Fencing_M_year)
+mean_years_weight_F_Fencing <- list()
+sd_years_weight_F_Fencing <- list()
+mean_years_height_F_Fencing <- list()
+sd_years_height_F_Fencing <- list()
+mean_years_weight_M_Fencing <- list()
+sd_years_weight_M_Fencing <- list()
+mean_years_height_M_Fencing <- list()
+sd_years_height_M_Fencing <- list()
+# women data
+for (i in 1:length(data_Fencing_F_year)) {
+	mean_years_weight_F_Fencing[[i]] <- mean(data_Fencing_F_year[[i]]$Weight)
+	sd_years_weight_F_Fencing[[i]] <- sd(data_Fencing_F_year[[i]]$Weight)
+	mean_years_height_F_Fencing[[i]] <- mean(data_Fencing_F_year[[i]]$Height)
+	sd_years_height_F_Fencing[[i]] <- sd(data_Fencing_F_year[[i]]$Height)
+}
+# men data
+for (i in 1:length(data_Fencing_M_year)) {
+	mean_years_weight_M_Fencing[[i]] <- mean(data_Fencing_M_year[[i]]$Weight)
+	sd_years_weight_M_Fencing[[i]] <- sd(data_Fencing_M_year[[i]]$Weight)
+	mean_years_height_M_Fencing[[i]] <- mean(data_Fencing_M_year[[i]]$Height)
+	sd_years_height_M_Fencing[[i]] <- sd(data_Fencing_M_year[[i]]$Height)
+}
+# make data frames
+Fencing_F_data <- do.call(rbind, Map(data.frame, Year = years_F_Fencing, Mean_Weight = mean_years_weight_F_Fencing, StdDev_Weight = sd_years_weight_F_Fencing, Mean_Height = mean_years_height_F_Fencing, StdDev_Height = sd_years_height_F_Fencing))
+Fencing_M_data <- do.call(rbind, Map(data.frame, Year = years_M_Fencing, Mean_Weight = mean_years_weight_F_Fencing, StdDev_Weight = sd_years_weight_F_Fencing, Mean_Height = mean_years_height_F_Fencing, StdDev_Height = sd_years_height_F_Fencing))
+# Football
+data_Football_gender <- split(data_sport$Football, data_sport$Football$Sex)
+data_Football_F_year <- split(data_Football_gender$F, data_Football_gender$F$Year)
+data_Football_M_year <- split(data_Football_gender$"M", data_Football_gender$"M"$Year)
+years_F_Football <- names(data_Football_F_year)
+years_M_Football <- names(data_Football_M_year)
+mean_years_weight_F_Football <- list()
+sd_years_weight_F_Football <- list()
+mean_years_height_F_Football <- list()
+sd_years_height_F_Football <- list()
+mean_years_weight_M_Football <- list()
+sd_years_weight_M_Football <- list()
+mean_years_height_M_Football <- list()
+sd_years_height_M_Football <- list()
+# women data
+for (i in 1:length(data_Football_F_year)) {
+	mean_years_weight_F_Football[[i]] <- mean(data_Football_F_year[[i]]$Weight)
+	sd_years_weight_F_Football[[i]] <- sd(data_Football_F_year[[i]]$Weight)
+	mean_years_height_F_Football[[i]] <- mean(data_Football_F_year[[i]]$Height)
+	sd_years_height_F_Football[[i]] <- sd(data_Football_F_year[[i]]$Height)
+}
+# men data
+for (i in 1:length(data_Football_M_year)) {
+	mean_years_weight_M_Football[[i]] <- mean(data_Football_M_year[[i]]$Weight)
+	sd_years_weight_M_Football[[i]] <- sd(data_Football_M_year[[i]]$Weight)
+	mean_years_height_M_Football[[i]] <- mean(data_Football_M_year[[i]]$Height)
+	sd_years_height_M_Football[[i]] <- sd(data_Football_M_year[[i]]$Height)
+}
+# make data frames
+Football_F_data <- do.call(rbind, Map(data.frame, Year = years_F_Football, Mean_Weight = mean_years_weight_F_Football, StdDev_Weight = sd_years_weight_F_Football, Mean_Height = mean_years_height_F_Football, StdDev_Height = sd_years_height_F_Football))
+Football_M_data <- do.call(rbind, Map(data.frame, Year = years_M_Football, Mean_Weight = mean_years_weight_F_Football, StdDev_Weight = sd_years_weight_F_Football, Mean_Height = mean_years_height_F_Football, StdDev_Height = sd_years_height_F_Football))
+# Canoeing
+data_Canoeing_gender <- split(data_sport$Canoeing, data_sport$Canoeing$Sex)
+data_Canoeing_F_year <- split(data_Canoeing_gender$F, data_Canoeing_gender$F$Year)
+data_Canoeing_M_year <- split(data_Canoeing_gender$"M", data_Canoeing_gender$"M"$Year)
+years_F_Canoeing <- names(data_Canoeing_F_year)
+years_M_Canoeing <- names(data_Canoeing_M_year)
+mean_years_weight_F_Canoeing <- list()
+sd_years_weight_F_Canoeing <- list()
+mean_years_height_F_Canoeing <- list()
+sd_years_height_F_Canoeing <- list()
+mean_years_weight_M_Canoeing <- list()
+sd_years_weight_M_Canoeing <- list()
+mean_years_height_M_Canoeing <- list()
+sd_years_height_M_Canoeing <- list()
+# women data
+for (i in 1:length(data_Canoeing_F_year)) {
+	mean_years_weight_F_Canoeing[[i]] <- mean(data_Canoeing_F_year[[i]]$Weight)
+	sd_years_weight_F_Canoeing[[i]] <- sd(data_Canoeing_F_year[[i]]$Weight)
+	mean_years_height_F_Canoeing[[i]] <- mean(data_Canoeing_F_year[[i]]$Height)
+	sd_years_height_F_Canoeing[[i]] <- sd(data_Canoeing_F_year[[i]]$Height)
+}
+# men data
+for (i in 1:length(data_Canoeing_M_year)) {
+	mean_years_weight_M_Canoeing[[i]] <- mean(data_Canoeing_M_year[[i]]$Weight)
+	sd_years_weight_M_Canoeing[[i]] <- sd(data_Canoeing_M_year[[i]]$Weight)
+	mean_years_height_M_Canoeing[[i]] <- mean(data_Canoeing_M_year[[i]]$Height)
+	sd_years_height_M_Canoeing[[i]] <- sd(data_Canoeing_M_year[[i]]$Height)
+}
+# make data frames
+Canoeing_F_data <- do.call(rbind, Map(data.frame, Year = years_F_Canoeing, Mean_Weight = mean_years_weight_F_Canoeing, StdDev_Weight = sd_years_weight_F_Canoeing, Mean_Height = mean_years_height_F_Canoeing, StdDev_Height = sd_years_height_F_Canoeing))
+Canoeing_M_data <- do.call(rbind, Map(data.frame, Year = years_M_Canoeing, Mean_Weight = mean_years_weight_F_Canoeing, StdDev_Weight = sd_years_weight_F_Canoeing, Mean_Height = mean_years_height_F_Canoeing, StdDev_Height = sd_years_height_F_Canoeing))
+# Basketball
+data_Basketball_gender <- split(data_sport$Basketball, data_sport$Basketball$Sex)
+data_Basketball_F_year <- split(data_Basketball_gender$F, data_Basketball_gender$F$Year)
+data_Basketball_M_year <- split(data_Basketball_gender$"M", data_Basketball_gender$"M"$Year)
+years_F_Basketball <- names(data_Basketball_F_year)
+years_M_Basketball <- names(data_Basketball_M_year)
+mean_years_weight_F_Basketball <- list()
+sd_years_weight_F_Basketball <- list()
+mean_years_height_F_Basketball <- list()
+sd_years_height_F_Basketball <- list()
+mean_years_weight_M_Basketball <- list()
+sd_years_weight_M_Basketball <- list()
+mean_years_height_M_Basketball <- list()
+sd_years_height_M_Basketball <- list()
+# women data
+for (i in 1:length(data_Basketball_F_year)) {
+	mean_years_weight_F_Basketball[[i]] <- mean(data_Basketball_F_year[[i]]$Weight)
+	sd_years_weight_F_Basketball[[i]] <- sd(data_Basketball_F_year[[i]]$Weight)
+	mean_years_height_F_Basketball[[i]] <- mean(data_Basketball_F_year[[i]]$Height)
+	sd_years_height_F_Basketball[[i]] <- sd(data_Basketball_F_year[[i]]$Height)
+}
+# men data
+for (i in 1:length(data_Basketball_M_year)) {
+	mean_years_weight_M_Basketball[[i]] <- mean(data_Basketball_M_year[[i]]$Weight)
+	sd_years_weight_M_Basketball[[i]] <- sd(data_Basketball_M_year[[i]]$Weight)
+	mean_years_height_M_Basketball[[i]] <- mean(data_Basketball_M_year[[i]]$Height)
+	sd_years_height_M_Basketball[[i]] <- sd(data_Basketball_M_year[[i]]$Height)
+}
+# make data frames
+Basketball_F_data <- do.call(rbind, Map(data.frame, Year = years_F_Basketball, Mean_Weight = mean_years_weight_F_Basketball, StdDev_Weight = sd_years_weight_F_Basketball, Mean_Height = mean_years_height_F_Basketball, StdDev_Height = sd_years_height_F_Basketball))
+Basketball_M_data <- do.call(rbind, Map(data.frame, Year = years_M_Basketball, Mean_Weight = mean_years_weight_F_Basketball, StdDev_Weight = sd_years_weight_F_Basketball, Mean_Height = mean_years_height_F_Basketball, StdDev_Height = sd_years_height_F_Basketball))
+# Wrestling
+data_Wrestling_gender <- split(data_sport$Wrestling, data_sport$Wrestling$Sex)
+data_Wrestling_F_year <- split(data_Wrestling_gender$F, data_Wrestling_gender$F$Year)
+data_Wrestling_M_year <- split(data_Wrestling_gender$"M", data_Wrestling_gender$"M"$Year)
+years_F_Wrestling <- names(data_Wrestling_F_year)
+years_M_Wrestling <- names(data_Wrestling_M_year)
+mean_years_weight_F_Wrestling <- list()
+sd_years_weight_F_Wrestling <- list()
+mean_years_height_F_Wrestling <- list()
+sd_years_height_F_Wrestling <- list()
+mean_years_weight_M_Wrestling <- list()
+sd_years_weight_M_Wrestling <- list()
+mean_years_height_M_Wrestling <- list()
+sd_years_height_M_Wrestling <- list()
+# women data
+for (i in 1:length(data_Wrestling_F_year)) {
+	mean_years_weight_F_Wrestling[[i]] <- mean(data_Wrestling_F_year[[i]]$Weight)
+	sd_years_weight_F_Wrestling[[i]] <- sd(data_Wrestling_F_year[[i]]$Weight)
+	mean_years_height_F_Wrestling[[i]] <- mean(data_Wrestling_F_year[[i]]$Height)
+	sd_years_height_F_Wrestling[[i]] <- sd(data_Wrestling_F_year[[i]]$Height)
+}
+# men data
+for (i in 1:length(data_Wrestling_M_year)) {
+	mean_years_weight_M_Wrestling[[i]] <- mean(data_Wrestling_M_year[[i]]$Weight)
+	sd_years_weight_M_Wrestling[[i]] <- sd(data_Wrestling_M_year[[i]]$Weight)
+	mean_years_height_M_Wrestling[[i]] <- mean(data_Wrestling_M_year[[i]]$Height)
+	sd_years_height_M_Wrestling[[i]] <- sd(data_Wrestling_M_year[[i]]$Height)
+}
+# make data frames
+Wrestling_F_data <- do.call(rbind, Map(data.frame, Year = years_F_Wrestling, Mean_Weight = mean_years_weight_F_Wrestling, StdDev_Weight = sd_years_weight_F_Wrestling, Mean_Height = mean_years_height_F_Wrestling, StdDev_Height = sd_years_height_F_Wrestling))
+Wrestling_M_data <- do.call(rbind, Map(data.frame, Year = years_M_Wrestling, Mean_Weight = mean_years_weight_F_Wrestling, StdDev_Weight = sd_years_weight_F_Wrestling, Mean_Height = mean_years_height_F_Wrestling, StdDev_Height = sd_years_height_F_Wrestling))
+```
+
+```{r printlegend}
+plot.new()
+legend("center", c("Swimming", "Rowing", "Ice Hockey", "Hockey", "Gymnastics", "Fencing", "Football", "Canoeing", "Basketball", "Wrestling"), fill=c("black", "red", "pink", "coral", "orange", "gold", "green", "lightseagreen", "blue", "purple"))
+#box()
+```
+
+```{r testggplot, echo=F}
+# women weight
+women_weight_plot <- ggplot(Swimming_F_data, aes(x=Year, y=Mean_Weight, group=1)) + geom_line(color='black') + geom_line(data = Rowing_F_data, colour='red') + geom_line(data = Ice.Hockey_F_data, colour='pink') + geom_line(data = Hockey_F_data, colour='coral') + geom_line(data = Gymnastics_F_data, colour='orange') + geom_line(data = Fencing_F_data, colour='gold') + geom_line(data = Football_F_data, colour='green') + geom_line(data = Canoeing_F_data, colour='lightseagreen') + geom_line(data = Basketball_F_data, colour='blue') + geom_line(data = Wrestling_F_data, colour='purple') + theme_minimal() + theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 10, hjust = 1), axis.text.y = element_text(vjust = 1, size = 12, hjust = 1)) + labs(title="Scatterplot of Olympic Women's \nAverage Weights [kg] Over Time", x="year", y="weight [kg]", color = "Legend") 
+# women height
+women_height_plot <- ggplot(Swimming_F_data, aes(x=Year, y=Mean_Height, group=1)) + geom_line(color="black") + labs(title="Scatterplot of Olympic Women's \nAverage Heights [cm] Over Time", x="year", y="height [cm]") + geom_line(data = Rowing_F_data, colour='red') + geom_line(data = Ice.Hockey_F_data, colour='pink') + geom_line(data = Hockey_F_data, colour='coral') + geom_line(data = Gymnastics_F_data, colour='orange') + geom_line(data = Fencing_F_data, colour='gold') + geom_line(data = Football_F_data, colour='green') + geom_line(data = Canoeing_F_data, colour='lightseagreen') + geom_line(data = Basketball_F_data, colour='blue') + geom_line(data = Wrestling_F_data, colour='purple') + theme_minimal() + theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 10, hjust = 1), axis.text.y = element_text(vjust = 1, size = 12, hjust = 1))
+# men weight
+men_weight_plot <- ggplot(Swimming_M_data, aes(x=Year, y=Mean_Weight, group=1)) + geom_line(color="black") + labs(title="Scatterplot of Olympic Men's \nAverage Weights [kg] Over Time", x="year", y="weight [kg]") + geom_line(data = Rowing_M_data, colour='red') + geom_line(data = Ice.Hockey_M_data, colour='pink') + geom_line(data = Hockey_M_data, colour='coral') + geom_line(data = Gymnastics_M_data, colour='orange') + geom_line(data = Fencing_M_data, colour='gold') + geom_line(data = Football_M_data, colour='green') + geom_line(data = Canoeing_M_data, colour='lightseagreen') + geom_line(data = Basketball_M_data, colour='blue') + geom_line(data = Wrestling_M_data, colour='purple') + theme_minimal() + theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 8, hjust = 1), axis.text.y = element_text(vjust = 1, size = 12, hjust = 1))
+# men height
+men_height_plot <- ggplot(Swimming_M_data, aes(x=Year, y=Mean_Height, group=1)) + geom_line(color="black") + labs(title="Scatterplot of Olympic Men's \nAverage Heights [cm] Over Time", x="year", y="height [cm]") + geom_line(data = Rowing_M_data, colour='red') + geom_line(data = Ice.Hockey_M_data, colour='pink') + geom_line(data = Hockey_M_data, colour='coral') + geom_line(data = Gymnastics_M_data, colour='orange') + geom_line(data = Fencing_M_data, colour='gold') + geom_line(data = Football_M_data, colour='green') + geom_line(data = Canoeing_M_data, colour='lightseagreen') + geom_line(data = Basketball_M_data, colour='blue') + geom_line(data = Wrestling_M_data, colour='purple') + theme_minimal() + theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 8, hjust = 1), axis.text.y = element_text(vjust = 1, size = 12, hjust = 1))
+# plots
+grid.arrange(women_weight_plot, men_weight_plot, women_height_plot, men_height_plot,
+                    #labels = c("A", "B", "C", "D"),
+                    ncol = 2, nrow = 2)
+```
+
+It seems that in general events like rowing or basketball have been trending towards larger and larger athletes (in terms of both weight and height) whereas events like Gymnastics skews in the completely opposite direction, favoring smaller and smaller athletes. The Wrestling event data is a bit misleading---we have taken the averages per Olympic game year, and if we were to look at the Wrestling data by itself we would see clear categories for weight and height. This is due to the nature of the sport, and its weight classes. This is why in the men's data it looks like the data for the Wrestling is a constant straight line. It appears that way because there the following weight classes at the Olympics: Freestyle weight classes (12): Men’s 57kg, Men’s 65kg, Men’s 74kg, Men’s 86kg, Men’s 97kg, Men’s 125kg, Women’s 50kg, Women’s 53kg, Women’s 57kg, Women’s 62kg, Women’s 68kg, Women’s 76kg; and then Greco-Roman weight classes (6): Men’s 60kg, Men’s 67kg, Men’s 77kg, Men’s 87kg, Men’s 97kg, Men’s 130kg. 
+
+What we can also use this over time data for is to see trends during "decades". We can overlay the data for the decades ontop of each other on a histogram, or we could use boxplots where we've made a decade into a "rank"/factorial data type. 
+
+```{r decades}
+#data_year <- split(athlete_events_noNA, athlete_events_noNA$Year)
+list_year <- list(1896, 1900, 1904, 1906, 1908, 1912, 1920, 1924, 1928, 1932, 1936, 1948, 1952, 1956, 1960, 1964, 1968, 1972, 1976, 1980, 1984, 1988, 1992, 1994, 1996, 1998, 2000, 2002, 2004, 2006, 2008, 2010, 2012, 2014, 2016)
+decade_list <- vector(mode = "list", length = length(athlete_events_noNA))
+#get indexes of decade decade
+index1890s <- which(athlete_events_noNA$Year >= 1890 & athlete_events_noNA$Year < 1900)
+index1900s <- which(athlete_events_noNA$Year >= 1900 & athlete_events_noNA$Year < 1910)
+index1910s <- which(athlete_events_noNA$Year >= 1910 & athlete_events_noNA$Year < 1920)
+index1920s <- which(athlete_events_noNA$Year >= 1920 & athlete_events_noNA$Year < 1930)
+index1930s <- which(athlete_events_noNA$Year >= 1930 & athlete_events_noNA$Year < 1940)
+index1940s <- which(athlete_events_noNA$Year >= 1940 & athlete_events_noNA$Year < 1950)
+index1950s <- which(athlete_events_noNA$Year >= 1950 & athlete_events_noNA$Year < 1960)
+index1960s <- which(athlete_events_noNA$Year >= 1960 & athlete_events_noNA$Year < 1970)
+index1970s <- which(athlete_events_noNA$Year >= 1970 & athlete_events_noNA$Year < 1980)
+index1980s <- which(athlete_events_noNA$Year >= 1980 & athlete_events_noNA$Year < 1990)
+index1990s <- which(athlete_events_noNA$Year >= 1990 & athlete_events_noNA$Year < 2000)
+index2000s <- which(athlete_events_noNA$Year >= 2000 & athlete_events_noNA$Year < 2010)
+index2010s <- which(athlete_events_noNA$Year >= 2010 & athlete_events_noNA$Year < 2020)
+#fill decade list with decade data
+for (i in 1:length(index1890s)) {
+  decade_list[index1890s[i]] <- "1890s"
+}
+for (i in 1:length(index1900s)) {
+  decade_list[index1900s[i]] <- "1900s"
+}
+for (i in 1:length(index1910s)) {
+  decade_list[index1910s[i]] <- "1910s"
+}
+for (i in 1:length(index1920s)) {
+  decade_list[index1920s[i]] <- "1920s"
+}
+for (i in 1:length(index1930s)) {
+  decade_list[index1930s[i]] <- "1930s"
+}
+for (i in 1:length(index1940s)) {
+  decade_list[index1940s[i]] <- "1940s"
+}
+for (i in 1:length(index1950s)) {
+  decade_list[index1950s[i]] <- "1950s"
+}
+for (i in 1:length(index1960s)) {
+  decade_list[index1960s[i]] <- "1960s"
+}
+for (i in 1:length(index1970s)) {
+  decade_list[index1970s[i]] <- "1970s"
+}
+for (i in 1:length(index1980s)) {
+  decade_list[index1980s[i]] <- "1980s"
+}
+for (i in 1:length(index1990s)) {
+  decade_list[index1990s[i]] <- "1990s"
+}
+for (i in 1:length(index2000s)) {
+  decade_list[index2000s[i]] <- "2000s"
+}
+for (i in 1:length(index2010s)) {
+  decade_list[index2010s[i]] <- "2010s"
+}
+#make dataframe with decade_list
+df <- data.frame(matrix(unlist(decade_list), nrow=length(decade_list), byrow=T))
+names(df)[1] <- "Decade"
+#combine two dataframes
+athlete_events_noNA <- cbind(athlete_events_noNA, df)
+#make into a factor
+athlete_events_noNA$Decade <- as.factor(athlete_events_noNA$Decade)
+```
+
+Now that I've created a new comlumn `Decade` in the dataframe, I can make histograms or boxplots of the `Weight` and `Height` and group by `Decade`. 
+
+```{r plot_by_decade}
+#separate data by decade
+df1890s <- athlete_events_noNA[athlete_events_noNA$Decade == "1890s", ]
+df1900s <- athlete_events_noNA[athlete_events_noNA$Decade == "1900s", ]
+df1910s <- athlete_events_noNA[athlete_events_noNA$Decade == "1910s", ]
+df1920s <- athlete_events_noNA[athlete_events_noNA$Decade == "1920s", ]
+df1930s <- athlete_events_noNA[athlete_events_noNA$Decade == "1930s", ]
+df1940s <- athlete_events_noNA[athlete_events_noNA$Decade == "1940s", ]
+df1950s <- athlete_events_noNA[athlete_events_noNA$Decade == "1950s", ]
+df1960s <- athlete_events_noNA[athlete_events_noNA$Decade == "1960s", ]
+df1970s <- athlete_events_noNA[athlete_events_noNA$Decade == "1970s", ]
+df1980s <- athlete_events_noNA[athlete_events_noNA$Decade == "1980s", ]
+df1990s <- athlete_events_noNA[athlete_events_noNA$Decade == "1990s", ]
+df2000s <- athlete_events_noNA[athlete_events_noNA$Decade == "2000s", ]
+df2010s <- athlete_events_noNA[athlete_events_noNA$Decade == "2010s", ]
+#histograms
+#ggplot(df1890s, aes(x=Weight)) + geom_histogram()
+#ggplot(df1900s, aes(x=Weight)) + geom_histogram()
+#ggplot(df1910s, aes(x=Weight)) + geom_histogram()
+#ggplot(df1920s, aes(x=Weight)) + geom_histogram()
+#ggplot(df1930s, aes(x=Weight)) + geom_histogram()
+#ggplot(df1940s, aes(x=Weight)) + geom_histogram()
+#ggplot(df1950s, aes(x=Weight)) + geom_histogram()
+#ggplot(df1960s, aes(x=Weight)) + geom_histogram()
+#ggplot(df1970s, aes(x=Weight)) + geom_histogram()
+#ggplot(df1980s, aes(x=Weight)) + geom_histogram()
+#ggplot(df1990s, aes(x=Weight)) + geom_histogram()
+#ggplot(df2000s, aes(x=Weight)) + geom_histogram()
+#ggplot(df2010s, aes(x=Weight)) + geom_histogram(aes(y=..density..), colour="black", fill="white") + geom_density(alpha=.2, fill="#FF6666") 
+#make plots
+hist_decade_weight <- ggplot(athlete_events_noNA, aes(x=Weight, color=Decade)) + geom_histogram(aes(y=..density..)) + theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 12, hjust = 1), axis.text.y = element_text(vjust = 1, size = 12, hjust = 1)) + labs(title="Histogram of \nOlympic Weights [kg] \nOver The Decades", x="weight [kg]") 
+
+hist_decade_height <- ggplot(athlete_events_noNA, aes(x=Height, color=Decade)) + geom_histogram(aes(y=..density..)) + theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 12, hjust = 1), axis.text.y = element_text(vjust = 1, size = 12, hjust = 1)) + labs(title="Histogram of \nOlympic Heights [kg] \nOver The Decades", x="height [cm]") 
+
+hist_decade_weight2 <- ggplot(athlete_events_noNA, aes(x=Weight, color=Decade)) + geom_histogram(aes(y=..density..), position="identity") + theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 12, hjust = 1), axis.text.y = element_text(vjust = 1, size = 12, hjust = 1)) + labs(title="Histogram of \nOlympic Weights [kg] \nOver The Decades", x="weight [kg]") 
+
+hist_decade_height2 <- ggplot(athlete_events_noNA, aes(x=Height, color=Decade)) + geom_histogram(aes(y=..density..), position="identity") + theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 12, hjust = 1), axis.text.y = element_text(vjust = 1, size = 12, hjust = 1)) + labs(title="Histogram of \nOlympic Heights [kg] \nOver The Decades", x="height [cm]") 
+
+boxplot_decade_weight <- ggplot(data=athlete_events_noNA, aes(x=Decade, y=Weight, fill=Decade)) + geom_boxplot() + theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 12, hjust = 1), axis.text.y = element_text(vjust = 1, size = 12, hjust = 1)) + labs(title="Boxplot of \nOlympic Weights [kg] \nOver The Decades", x="weight [kg]") 
+
+boxplot_decade_height <- ggplot(data=athlete_events_noNA, aes(x=Decade, y=Height, fill=Decade)) + geom_boxplot() + theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 12, hjust = 1), axis.text.y = element_text(vjust = 1, size = 12, hjust = 1)) + labs(title="Boxplot of \nOlympic Heights [kg] \nOver The Decades", x="height [cm]") 
+
+qqplot_decade_weight <- ggplot(athlete_events_noNA, aes(sample = Weight, color=Decade)) + stat_qq() + stat_qq_line() + labs(title="Normal Q-Q plot of \nOlympic Weights [kg] \nOver The Decades") 
+
+qqplot_decade_height <- ggplot(athlete_events_noNA, aes(sample = Height, color=Decade)) + stat_qq() + stat_qq_line() + labs(title="Normal Q-Q plot of \nOlympic Heights [cm] \nOver The Decades") 
+#show plots
+#grid.arrange(hist_decade_weight, boxplot_decade_weight, hist_decade_height, boxplot_decade_height, ncol = 2, nrow = 2)
+grid.arrange(hist_decade_weight, boxplot_decade_weight, ncol = 2, nrow = 1)
+grid.arrange(hist_decade_height, boxplot_decade_height, ncol = 2, nrow = 1)
+grid.arrange(hist_decade_weight2, hist_decade_height2, ncol = 2, nrow = 1)
+grid.arrange(qqplot_decade_height, qqplot_decade_height, ncol = 2, nrow = 1)
+```
+
+
+
+
+# Variance/Standard Deviation/Histograms
+
+# Normality Tests
+
+# Discussion & Conclusion
