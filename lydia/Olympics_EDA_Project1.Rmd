@@ -82,7 +82,7 @@ weight_normality
 
 ## Height 
 ```{r Height}
-
+loadPkg("ggplot2")
 h <- ggplot(athletes, aes(x=Height, fill=Sex)) 
 
 #historgram of height broken down by gender
@@ -257,8 +257,8 @@ ggplot(male_athletes, aes(x=BMI, fill=BMI_Category))  + geom_histogram(color="gr
 female_athletes <- subset(adult_athletes, Sex=="F")
 femaledf <- female_athletes %>% group_by(Sport) %>% summarise_at(vars(Height, Weight,BMI), funs(mean(.,na.rm = TRUE)))
 
-tallest_female <-head(femaledf[order(femaledf$Height),],10)
-shortest_female <- tail(femaledf[order(femaledf$Height),],10)
+shortest_female <-head(femaledf[order(femaledf$Height),],10)
+tallest_female <- tail(femaledf[order(femaledf$Height),],10)
 
 lightest_female <- head(femaledf[order(femaledf$Weight),],10)
 heaviest_female <- tail(femaledf[order(femaledf$Weight),],10)
@@ -267,6 +267,7 @@ heaviest_female <- tail(femaledf[order(femaledf$Weight),],10)
 ggplot(female_athletes, aes(x=BMI, fill=BMI_Category))  + geom_histogram(color="gray7") + labs(title="Body Mass Index (BMI) of Female Olympic Athletes Over 18 years old", y="Population", x="BMI") + scale_fill_discrete(name="", labels=c("Underweight", "Normal", "Overweight", "Obese"))
 
 ```
+
 
 ```{r scatterplot}
 
