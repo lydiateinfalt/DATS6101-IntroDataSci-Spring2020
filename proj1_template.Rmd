@@ -109,6 +109,9 @@ count_sports_data <- do.call(rbind, Map(data.frame, "sport.names" = list_sports,
 sort_count_sports_data <- count_sports_data[order(-count_sports_data$sport.counts),]
 sort_count_sports_data[2:11,]
 top10 <- sort_count_sports_data[2:11,][1]
+count_data <- data.frame("Events"=sort_count_sports_data[1:nrow(sort_count_sports_data)/3,][1], "Counts"=sort_count_sports_data[1:nrow(sort_count_sports_data)/3,][2])
+names(count_data) <- c("Events", "Counts")
+ggplot(data=count_data, aes(x=Events, y=Counts, color=Events)) + geom_bar(stat="identity") + theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 12, hjust = 1), axis.text.y = element_text(vjust = 1, size = 12, hjust = 1)) + labs(title="Barchart of events with most athletes", x="Event") 
 ```
 
 In list form:
@@ -581,7 +584,7 @@ qqplot_decade_height <- ggplot(athlete_events_noNA, aes(sample = Height, color=D
 grid.arrange(hist_decade_weight, boxplot_decade_weight, ncol = 2, nrow = 1)
 grid.arrange(hist_decade_height, boxplot_decade_height, ncol = 2, nrow = 1)
 grid.arrange(hist_decade_weight2, hist_decade_height2, ncol = 2, nrow = 1)
-grid.arrange(qqplot_decade_height, qqplot_decade_height, ncol = 2, nrow = 1)
+grid.arrange(qqplot_decade_weight, qqplot_decade_height, ncol = 2, nrow = 1)
 ```
 
 
