@@ -10,12 +10,13 @@ output:
     toc_depth: 2
     toc_float: yes
     df_print: paged
+    warning: FALSE
   pdf_document:
     toc: yes
     toc_depth: '2'
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include=F}
 knitr::opts_chunk$set(echo = TRUE, results = T )
 ```
 
@@ -48,18 +49,19 @@ Loading data.
 ```{r loadDat, include = F}
 athlete_events <- data.frame(read_csv("C:/Users/Squall/Documents/gradschool/classes/Spring 2020/DatSci/Project/athlete_events.csv/athlete_events.csv"))
 noc_regions <- data.frame(read_csv("~/gradschool/classes/Spring 2020/DatSci/Project/noc_regions.csv"))
+names(athlete_events)
 ```
 
 Looking at data:
 
-```{r lookAT, include = T}
+```{r lookAT, results = "markup"}
 dim(noc_regions)
 summary(athlete_events)
 ```
 
 Integer encoding the NOC data for possible later usage:
 
-```{r addInt, include = T}
+```{r addInt, results = "markup"}
 NOC_Int <- c(as.numeric(as.factor(noc_regions$NOC)))
 noc_regions$NOC.Int <- NOC_Int
 noc_regions
@@ -67,7 +69,7 @@ noc_regions
 
 Looking at oldest and youngest athletes, finding athletes with NA age:
 
-```{r ages, include = T}
+```{r ages, results = "markup"}
 #ages <- athlete_events$Age
 #max(athlete_events$Age, na.rm = TRUE)
 oldAge <- subset(athlete_events, Age == max(athlete_events$Age, na.rm = TRUE))
@@ -79,18 +81,21 @@ head(shyAthletes)
 
 Counts of certain columns:
 
-```{r counts, include = T}
+```{r counts, results = "markup"}
 loadPkg("dplyr")
 sexC <- athlete_events %>% count(Sex)
+sexC$percentage <- sexC$n/sum(sexC$n)*100
+sexC
 ageC <- athlete_events %>% count(Age)
 nameC <- athlete_events %>% count(Name)
 medalC <- athlete_events %>% count(Medal)
+medalC$percentage <- medalC$n/sum(medalC$n)*100
 medalC
 ```
 
 Barchart of medal data:
 
-```{r medalBarPlot, include = T}
+```{r medalBarPlot, results = "markup"}
 medalDat <- subset(athlete_events, !is.na(Medal))
 bp1 <- ggplot(athlete_events, aes(x=Medal), color = Team) + geom_bar(aes(y=(..count..)/sum(..count..)))
 bp2 <- ggplot(medalDat, aes(x=Medal), color = Team) + geom_bar(aes(y=(..count..)/sum(..count..)))
@@ -100,7 +105,7 @@ grid.arrange(bp1, bp2, nrow = 1)
 
 Integer encoding data so that it can be include in checking correlation:
 
-```{r integerEnc, include = T}
+```{r integerEnc, results = "markup"}
 mDat <- medalDat %>% mutate(Medal = replace(Medal, Medal == "Gold", 1))
 mDat <- mDat %>% mutate(Medal = replace(Medal, Medal == "Silver", 2))
 mDat <- mDat %>% mutate(Medal = replace(Medal, Medal == "Bronze", 3))
@@ -115,7 +120,7 @@ head(mDat)
 
 Columns that I want to keep for correlation plot:
 
-```{r keep, include = T}
+```{r keep, results = "markup"}
 keeps <- c("ID","Sex","Age","Height","Weight","NOC.Int","Sport.Int","Medal")
 dmDat <- mDat[ , keeps, drop = FALSE]
 dmDat[,] <- sapply(dmDat[,], as.numeric)
@@ -124,7 +129,7 @@ head(dmDat)
 
 Correlation plot:
 
-```{r corrPlots, include = T}
+```{r corrPlots, results = "markup"}
 loadPkg("digest")
 corr = cor(dmDat, use="pairwise.complete.obs") 
 c1 <- corrplot.mixed(corr, title="Correlation Matrix", mar=c(0,0,1,0))
@@ -139,7 +144,7 @@ grid.arrange(gcorr1, gcorr2, nrow = 1)
 
 Essentially very similar to above, just with package PerformanceAnalytics:
 
-```{r PerfAn, include = T}
+```{r PerfAn, results = "markup"}
 chart.Correlation(dmDat, histogram=TRUE, pch=19)
 ```
 
@@ -158,53 +163,85 @@ last_names <- word(first.instance$Name,-1)
 first_names <- word(first.instance$Name,1)
 first.instance$First.Name <- first_names
 first.instance$Last.Name <- last_names
+
+first.instance.F <- subset(first.instance, first.instance$Sex == "F")
+first.instance.M <- subset(first.instance, first.instance$Sex == "M")
+```
+
+Using that list of first instances of names as a way to generate global heat plot:
+
+```{r}
+getwd()
+US_cities_data <- read_csv("US_cities_data.csv")
+US_cities_data
+US_cities_data100 <- US_cities_data[1:100,]
+US_cities_data100[order(-US_cities_data100$num.athletes),]
+US_cities_data100 <- US_cities_data100[seq(dim(US_cities_data100)[1],1),]
+US_cities_data100
+```
+
+```{r}
+loadPkg("usmap")
+loadPkg("ggplot2")
+loadPkg("ggmap")
+loadPkg("maps")
+
+US_cities_data100 <- cbind(geocode(as.character(US_cities_data100$name)), US_cities_data100)
+```
+
+```{r}
+#LA <- map_data("state", region="louisiana")
+#salesCalls <- data.frame(State=rep("louisiana",5), City=c("Baton Rouge", "New Orleans", "Shreveport", "Lafayette", "Mandeville"), Calls=c(10,5,8,13,2))
+
+map<-get_map(location='united states', zoom=4, maptype = "watercolor", source='stamen')
+pdf("US_map.pdf",width=15,height=15,pointsize=15)
+print(ggmap(map) + geom_point(data = US_cities_data100, aes(x=lon, y=lat, show_guide = TRUE, color=num.athletes), alpha=.85, na.rm = T, size = 10) + scale_color_gradient(low="olivedrab1", high="black") + labs(title="Heat map of US birth cities of olympic athletes")+theme_classic(base_size=24))
+dev.off()
+
+#USp <- plot_usmap(regions = "counties") + labs(title = "US Counties") + theme(panel.background = element_rect(color = "black", fill = "lightblue"))
 ```
 
 
-```{r worldmap, include = T}
+```{r worldmap, results = "markup"}
 loadPkg("tidyverse")
 loadPkg("rvest")
 loadPkg("magrittr")
 loadPkg("ggmap")
 
 first.inst.NOC <- first.instance %>% count(NOC)
+#first.inst.NOC <- athlete_events %>% count(NOC)
 first.inst.NOC <- first.inst.NOC[order(first.inst.NOC$NOC),]
 names(first.inst.NOC)[names(first.inst.NOC) == "n"] <- "rank"
 first.inst.NOC$country = noc_regions$region
-first.inst.NOC
+first.inst.NOC <- first.inst.NOC[order(-first.inst.NOC$rank),]
+head(first.inst.NOC,20)
 
 map.world <- map_data("world")
 map.world_joined <- left_join(map.world, first.inst.NOC, by = c('region' = 'country'))
 map.world_joined <- map.world_joined %>% mutate(fill_flg = ifelse(is.na(rank),F,T))
 
-register_google(key = "AIzaSyCv1WHHXGBFuIRJBQ3G-5Ijuyft_8sKeHc")
+register_google(key = "AIzaSyDMRZqMVgzu3MFA51fFtKlOLwrzPXSWyko")
 df.country_points <- data.frame(country = c("Singapore","luxembourg"),stringsAsFactors = F)
-glimpse(df.country_points)
 geocode.country_points <- geocode(df.country_points$country)
 df.country_points <- cbind(df.country_points,geocode.country_points)
-map.world_joined
-
-ggplot() + 
-  geom_polygon( data=map.world_joined, aes(x=long, y=lat, group=group),
-                color="black", fill="lightblue" )
 
 w <- ggplot()
-w <- w + geom_polygon( data=map.world_joined, 
-          aes(x=long, y=lat, group=group, fill = rank), 
-          color="white", size = 0.2) 
-w
+w <- w + geom_polygon( data=map.world_joined, aes(x=long, y=lat, group=group), color="black", fill="lightblue" )
 
-w <- w + scale_fill_continuous(name="Number of Olympic Athletes", 
-            low = "lightblue", high = "darkblue",limits = c(0,9700), 
-            breaks=c(970,1940,2910,3880,4850,5820,6790,7760,8730), na.value = "white") +
+w <- w + geom_polygon( data=map.world_joined, aes(x=long, y=lat, group=group, fill = rank), color="black") 
 
-          labs(title="Olympic Athletes from Around the Globe")
-w
+pdf("global_map.pdf",width=25,height=15,pointsize=50)
+print(w <- w + scale_fill_continuous(name="counts", low = "goldenrod1", high = "firebrick4",limits = c(0,19400), breaks=c(0, 970, 1940, 2910, 3880, 4850, 5820, 6790, 7760, 8730, 9700, 10670, 11640, 12610, 13580, 14550, 15520, 16490, 17460, 18430, 19400), na.value = "white") + labs(title="Heat map of olympic athletes from around the globe") + theme_gray(base_size=25))
+dev.off() 
 ```
 
 
 ```{r namesCount, include = F}
 first.names.count <- first.instance %>% count(First.Name)
+first.names.countF <- first.instance.F %>% count(First.Name)
+first.names.countM <- first.instance.M %>% count(First.Name)
+#first.names.countF[order(first.names.countF$n, decreasing = TRUE),]
+#first.names.countM[order(first.names.countM$n, decreasing = TRUE),]
 #first.names.count <- data.frame(count(first.instance, vars="First.Name"))
 #sort.firstname <- first.names.count[order(first.names.count$freq, decreasing = TRUE),]
 
@@ -214,16 +251,26 @@ lastname.edit <- subset(last.names.count, !(last.names.count$Last.Name == "Jr.")
 ```
 
 
-```{r wordcloudF, include = T}
-wordcloud(words = first.names.count$First.Name, freq = first.names.count$n, min.freq = 190, max.words=100, random.order=FALSE, rot.per=0.35, colors=brewer.pal(8, "Paired"))
+```{r wordcloudF, results = "markup"}
+pdf("wc1.pdf")
+print(wordcloud(words = first.names.count$First.Name, freq = first.names.count$n, min.freq = 1, max.words=100, random.order=FALSE, rot.per=0.35, colors=brewer.pal(8, "Paired")))
+dev.off()
+pdf("wc2.pdf")
+print(wordcloud(words = first.names.countF$First.Name, freq = first.names.countF$n, min.freq = 1, max.words=100, random.order=FALSE, rot.per=0.35, colors=brewer.pal(8, "Paired")))
+dev.off()
+pdf("wc3.pdf")
+print(wordcloud(words = first.names.countM$First.Name, freq = first.names.countM$n, min.freq = 1, max.words=100, random.order=FALSE, rot.per=0.35, colors=brewer.pal(8, "Paired")))
+dev.off()
 ```
 
-```{r wordcloudL, include = T}
-wordcloud(words = lastname.edit$Last.Name, freq = lastname.edit$n, min.freq = 50, max.words=100, random.order=FALSE, rot.per=0.35, colors=brewer.pal(8, "Paired"))
+```{r wordcloudL, results = "markup"}
+pdf("wc4.pdf")
+print(wordcloud(words = lastname.edit$Last.Name, freq = lastname.edit$n, min.freq = 1, max.words=100, random.order=FALSE, rot.per=0.35, colors=brewer.pal(8, "Paired")))
+dev.off()
 ```
 
 
-```{r longest_name, include = T}
+```{r longest_name, results = "markup"}
 val2 = which.max(nchar(athlete_events$Name))
 athlete_events[val2,]
 ```
@@ -231,19 +278,25 @@ athlete_events[val2,]
 
 Looking at height/weight info:
 
-```{r weight_height_info, include = T}
+```{r weight_height_info, results = "markup"}
 loadPkg("plyr")
-weightDat <- subset(athlete_events, !is.na(Weight))
-heightDat <- subset(athlete_events, !is.na(Height))
+weightDat <- subset(first.instance, !is.na(Weight))
+heightDat <- subset(first.instance, !is.na(Height))
+ageDat <- subset(first.instance, !is.na(Age))
+#weightDat <- subset(athlete_events, !is.na(Weight))
+#heightDat <- subset(athlete_events, !is.na(Height))
+#ageDat <- subset(athlete_events, !is.na(Age))
 muW <- ddply(weightDat, "Sex", summarise, grp.mean=mean(Weight), grp.variance=var(Weight), grp.standarddev=sd(Weight))
 muH <- ddply(heightDat, "Sex", summarise, grp.mean=mean(Height), grp.variance=var(Height), grp.standarddev=sd(Height))
+muA <- ddply(ageDat, "Sex", summarise, grp.mean=mean(Age), grp.variance=var(Age), grp.standarddev=sd(Age))
 muW
 muH
+muA
 ```
 
-Standard histograms forheight/weight:
+Standard histograms for height/weight/age:
 
-```{r WHhist, include = T}
+```{r WHhist, results = "markup"}
 p1 <- ggplot(weightDat, aes(x=Weight, color=Sex, fill=Sex)) + geom_histogram(alpha=0.5, binwidth = 5, aes(y=..density..), position="dodge") + geom_density(alpha=0.6) + geom_vline(data=muW, aes(xintercept=grp.mean, color=Sex), linetype="dashed") +
 labs(title="Weight histogram plot",x="Weight(kg)", y = "Density")
 
@@ -255,9 +308,13 @@ labs(title="Height histogram plot",x="Height(cm)", y = "Density")
 p2c <- p2 + scale_color_brewer(palette="Accent")+ scale_fill_brewer(palette="Accent") + 
   theme_minimal()+theme(legend.position="top")
 
-grid.arrange(p1c, p2c, nrow = 2)
+p3 <- ggplot(ageDat, aes(x=Age, color=Sex, fill=Sex)) + geom_histogram(binwidth = 5, alpha=0.5, aes(y=..density..), position="dodge") + geom_density(alpha=0.6) + geom_vline(data=muA, aes(xintercept=grp.mean, color=Sex), linetype="dashed") +
+labs(title="Age histogram plot",x="Age(years)", y = "Density")
 
-weightDat
+p3c <- p3 + scale_color_brewer(palette="Accent")+ scale_fill_brewer(palette="Accent") + 
+  theme_minimal()+theme(legend.position="top")
+
+grid.arrange(p1c, p2c, p3c, nrow = 2, ncol = 2)
 ```
 
 ```{r outlierKD2}
@@ -315,10 +372,14 @@ outlierKD2 <- function(df, var, rm=FALSE, title, colVal) {
 }
 ```
 
-```{r outlier_stand, include = T}
+```{r outlier_stand, results = "markup"}
 weightDat.noOut = outlierKD2(weightDat, Weight, TRUE, "weight (kg)", "red")
 heightDat.noOut = outlierKD2(heightDat, Height, TRUE, "height (cm)", "blue")
+ageDat.noOut = outlierKD2(ageDat, Age, TRUE, "age (years)", "green")
+```
 
+
+```{r outlierGG, include = T}
 g1 <- ggplot(weightDat, aes(x=Sex, y=Weight, color = Sex)) + geom_boxplot() + geom_boxplot(outlier.colour="black", outlier.shape=16, outlier.size=1) + labs(title="Weight Boxplot of Olympic Athletes\nWith Outliers", x="sex", y="weight (kg)")
 g2 <- ggplot(weightDat) + geom_qq(aes(sample = Weight), color = "red") + geom_qq_line(aes(sample = Weight)) + theme_minimal() + labs(title="Q-Q Plot of Weight of Olympic Athletes\nWith Outliers")
 
@@ -334,6 +395,7 @@ g8 <- ggplot(heightDat.noOut) + geom_qq(aes(sample = Height), color = "red") + g
 grid.arrange(g1,g2,g3,g4, ncol = 2, nrow = 2)
 grid.arrange(g5,g6,g7,g8, ncol = 2, nrow = 2)
 ```
+
 
 
 
