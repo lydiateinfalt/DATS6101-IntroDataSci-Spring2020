@@ -1,0 +1,241 @@
+---
+title: "Amadi_GP"
+author: "Obumneke"
+date: "2/21/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+Load packages
+```{r}
+
+library("tidyverse")
+library("data.table")
+library("knitr")
+```
+Load data
+
+```{r}
+# Load athletes_events data 
+olympic <- read_csv("/Users/iillari/Documents/gwu/spring2020/intro_dats/eda_project/athlete_events.csv",
+                 col_types = cols(
+                   ID = col_character(),
+                   Name = col_character(),
+                   Sex = col_factor(levels = c("M","F")),
+                   Age =  col_integer(),
+                   Height = col_double(),
+                   Weight = col_double(),
+                   Team = col_character(),
+                   NOC = col_character(),
+                   Games = col_character(),
+                   Year = col_integer(),
+                   Season = col_factor(levels = c("Summer","Winter")),
+                   City = col_character(),
+                   Sport = col_character(),
+                   Event = col_character(),
+                   Medal = col_factor(levels = c("Gold","Silver","Bronze"))
+                 )
+)
+
+```
+
+
+
+```{r olympic}
+summary(olympic)
+```
+checking season by sport
+```{r}
+medalist <- olympic %>% 
+  filter(!is.na(Medal)) 
+
+medalist %>%
+  group_by(Season, Sport) %>% 
+  summarise(
+    mean = mean(Age, na.rm = TRUE)
+  )
+```
+checking sports by average age
+```{r}
+Sport <- olympic %>% 
+  filter(!is.na(Sport)) 
+
+
+Sport %>% 
+  group_by(Sport) %>% 
+  summarise(
+    mean = mean(Age, na.rm = TRUE)
+  )
+```
+Checking Season's average of age
+```{r}
+Season <- olympic %>% 
+  filter(!is.na(Season)) 
+
+
+Season %>% 
+  group_by(Season) %>% 
+  summarise(
+    mean = mean(Age, na.rm = TRUE)
+  )
+```
+
+Check medalist's average of age.
+
+```{r}
+
+medalist <- olympic %>% 
+  filter(!is.na(Medal)) 
+
+
+medalist %>% 
+  group_by(Medal) %>% 
+  summarise(
+    mean = mean(Age, na.rm = TRUE)
+  )
+
+```
+
+The medalist gains medals when about 26 years old.
+
+Next, checking the age by sex and seasons.
+
+```{r}
+
+#what
+medalist %>%
+  group_by(Season, Sex) %>% 
+  summarise(
+    mean = mean(Age, na.rm = TRUE)
+  )
+  
+
+
+```
+
+Checking the average age of the medalists chronologically. 
+First, the Summer Olympic Games.
+
+
+```{r}
+
+summer_medalist <-
+medalist %>% 
+  group_by(Year, Season, Medal) %>% 
+  filter(Season == "Summer") %>% 
+  summarise(
+    mean = mean(Age, na.rm = TRUE)
+  )
+
+
+ggplot(data = summer_medalist, 
+       mapping = aes(x = Year, y= mean, group = Medal, color = Medal)) +
+  geom_point(size=2) +
+  geom_line() +
+  ggtitle("summer olympic medalist's average of age")
+
+
+
+```
+
+In between WW1and WW2", the average age of medalists is decreasing. 
+After WW2, the average age temporarily rose. continued decrese until 1980. Stared rising again as of 1980.
+
+```{r}
+
+summer_medalist_sex <-
+  medalist %>%
+  filter(Season == "Summer") %>% 
+  group_by(Year, Sex) %>% 
+    summarise(
+    mean = mean(Age, na.rm = TRUE)
+  )
+
+ggplot(data = summer_medalist_sex, 
+       mapping = aes(x = Year, y= mean, group = Sex, color = Sex)) +
+  geom_point(size=2) +
+  geom_line() +
+  ggtitle("summer olympic medalist's average of age") +
+  ylim(20,35)
+
+
+```
+
+By sex, men get medals at older age than women
+Next, Winter Olympic.
+
+```{r}
+medalist_winter <-
+  medalist %>% 
+  group_by(Year, Season, Medal) %>% 
+  filter(Season == "Winter") %>% 
+  summarise(
+    mean = mean(Age, na.rm = TRUE)
+  )
+
+ggplot(data = medalist_winter, mapping = aes(x= Year, y= mean, group = Medal, color = Medal)) +
+  geom_point(size=2) +
+  geom_line() 
+
+
+```
+
+check the average age of the winter olimpic medalists chronologically.
+
+```{r}
+
+season_medalist <-
+medalist %>% 
+  group_by(Season, Year) %>% 
+  summarise(
+    mean = mean(Age, na.rm = TRUE)
+  )
+
+
+ggplot( data = season_medalist, 
+  mapping = aes(x= Year, y= mean, group = Season, color = Season)) +
+  geom_point(size=2) +
+  geom_line() 
+
+
+
+```
+
+The winter Olympic Games are slightly higher than the summer games. 
+Has an upward trend as of 1980s.
+
+Next,by sex.
+```{r}
+
+winter_medalist <-
+  medalist %>% 
+  group_by(Year, Season, Sex) %>% 
+  filter(Season == "Winter") %>% 
+  summarise(
+    mean = mean(Age, na.rm = TRUE)
+  )
+
+ggplot(data = winter_medalist, 
+       mapping = aes(x = Year, y= mean, group = Sex, color = Sex)) +
+  geom_point(size=2) +
+  geom_line() +
+  ggtitle("winter olympic medalist's average of age")
+
+
+```
+
+The d/f between men and women is smaller till the 1990.
+
+
+
+```
+

@@ -764,27 +764,6 @@ ggplot(data = summer_medalist,
 
 From the plots we can see that between WW1 and WW2 the average age of medalists is decreasing, but after WW2 the average age temporarily rose. We see that the age begins to decrease until 1980 but then rises again after 1980. The age seems to plateau in the 2010s. 
 
-```{r age_sex_plots}
-summer_medalist_sex <-
-  medalist %>%
-  filter(Season == "Summer") %>% 
-  group_by(Year, Sex) %>% 
-    summarise(
-    mean = mean(Age, na.rm = TRUE)
-  )
-
-ggplot(data = summer_medalist_sex, 
-       mapping = aes(x = Year, y= mean, group = Sex, color = Sex)) +
-  geom_point(size=2) +
-  geom_line() +
-  labs(title="Average Age of Olympic Medalists in the Summer Games Separated by Gender",
-       x="year", y="mean age [years]") +
-  theme_minimal() +
-  theme(panel.border = element_rect(colour = "black", fill=NA, size=1))
-```
-
-When we look at the medal-winning athletes by gender we see that in general men get medals at older ages than women do. 
-
 Now we can look at the trends amongst the athletes in the Winter Games. 
 
 ```{r winter_games_ages}
@@ -806,7 +785,7 @@ ggplot(data = medalist_winter, mapping = aes(x= Year, y= mean, group = Medal, co
   scale_color_manual(values=c("goldenrod1", "darkgray", "coral3")) 
 ```
 
-It seems that there are fewer peaks and dips than in the Summer Games data, where the Winter Athletes seem to have a smaller variance in age. We can look at the Summer and Winter Games directly. 
+It seems that there are fewer peaks and dips than in the Summer Games data, where the Winter Athletes seem to have a smaller variance in age. We can look at the Summer and Winter Games together. 
 
 ```{r compare_summer_winter}
 season_medalist <-
@@ -828,6 +807,29 @@ ggplot( data = season_medalist,
 ```
 
 It appears that after the 1950s the athletes at the Winter Games, on average, are older. Both Summer and Winter Games experience an upward trend in ages after the 1980s. 
+
+We can also look at the breakdown of ages between Season and Gender.
+
+```{r age_sex_plots}
+summer_medalist_sex <-
+  medalist %>%
+  filter(Season == "Summer") %>% 
+  group_by(Year, Sex) %>% 
+    summarise(
+    mean = mean(Age, na.rm = TRUE)
+  )
+
+ggplot(data = summer_medalist_sex, 
+       mapping = aes(x = Year, y= mean, group = Sex, color = Sex)) +
+  geom_point(size=2) +
+  geom_line() +
+  labs(title="Average Age of Olympic Medalists in the Summer Games Separated by Gender",
+       x="year", y="mean age [years]") +
+  theme_minimal() +
+  theme(panel.border = element_rect(colour = "black", fill=NA, size=1))
+```
+
+When we look at the medal-winning athletes during the Summer Games by gender we see that in general men get medals at older ages than women do. 
 
 We can also separate the Winter Game data by gender, as we did for the Summer Games.
 
