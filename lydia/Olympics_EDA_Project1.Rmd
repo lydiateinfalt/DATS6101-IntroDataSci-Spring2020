@@ -43,9 +43,15 @@ ks.test(athletes$Weight,pnorm) # Kolmogorov-Smirnov Tests against normal distrib
 ```
 
 ## Height 
-```{r Height, echo=F}
-hist(athletes$Height, main="Histogram of Olympians Height", xlab="Height (cm)", col = 'blue' )
-boxplot(athletes$Height, main="Boxplot of Olympians Height", ylab="Height (cm)", col = 'orange' )
+```{r Height}
+loadPkg("ggplot2")
+h <- ggplot(athletes, aes(x=Height, fill=Sex)) 
+
+#historgram of height broken down by gender
+h + geom_histogram(color="gray7") + xlab("height (cm)")  + facet_wrap( ~ Sex, ncol=2)
+
+boxplot(athletes$Height, main="Boxplot of Olympians Height", ylab="Height (cm)", col = 'tomato4' )
+
 qqnorm(athletes$Height, main="Q-Q plot of Olympians weight") 
 qqline(athletes$Height)
 #shapiro.test(athletes$Height) # Unable to use Shapiro-Wilk test for normality because sample size must be between 3 and 5000
@@ -65,12 +71,13 @@ ks.test(athletes$Age,pnorm) # Kolmogorov-Smirnov Tests against normal distributi
 
 ```
 
-```{r EDA2}
-sd.height <- sd(athletes$Height, na.rm=TRUE)
-mean.height <- mean(athletes$Height, na.rm = TRUE)
 
+```{r removeWeightOutliers, results='hide'}
+athletes = outlierKD2(athletes,Weight,TRUE)
+athletes = outlierKD2(athletes,Age,TRUE)
 sd.weight <- sd(athletes$Weight, na.rm = TRUE)
 mean.weight <- mean(athletes$Weight, na.rm = TRUE)
+
 
 ```
 Standard deviation height `r sd.height`
@@ -80,15 +87,33 @@ Mean Weight `r mean.weight`
 
 
 
-```{r, echo=TRUE}
-var(athletes$Height, na.rm = T)
-mean(athletes$Height, na.rm = T)
-sd(athletes$Height, na.rm = T)
+
+## Histogram of Olympic Athletes Weight 
+```{r replot_weight}
+a1 <- ggplot(athletes, aes(x=Weight, fill=Sex)) 
+
+#historgram of height broken down by gender
+a1 + geom_histogram(color="gray7", binwidth = 4) + xlab("Weight (kg)") + facet_wrap( ~ Sex, ncol=2)
+
+
+
+boxplot(athletes$Weight, main="Boxplot of Olympians Weight", ylab="Weight (kg)", col = 'orange' )
+qqnorm(athletes$Weight, main="Q-Q plot of Olympians Weight") 
+qqline(athletes$Weight)
+
 ```
 
-```{r}
-z80height <- (80-mean.height)/sd.height
-z80height
+
+## Histogram of Olympic Athletes Age 
+```{r replot_Age}
+a1 <- ggplot(athletes, aes(x=Age, fill=Sex)) 
+
+#historgram of height broken down by gender
+a1 + geom_histogram(color="gray7", binwidth = 1) + xlab("age") + facet_wrap( ~ Sex, ncol=2)
+
+boxplot(athletes$Age, main="Boxplot of Olympians Age", ylab="Age", col = 'orange' )
+qqnorm(athletes$Age, main="Q-Q plot of Olympians Age") 
+qqline(athletes$Age)
 ```
 
 ```{r, echo = F}
@@ -101,19 +126,6 @@ athletes$zheight = scale(athletes$Height)
 athletes$zweight = scale(athletes$Weight)
 ```
 
-```{r, echo=F}
-mean(athletes$zheight, na.rm = TRUE)
-sd(athletes$zheight, na.rm = TRUE)
-
-summary(athletes$zheight)
-summary(athletes$zweight)
-```
-
-```{r, echo = F, message=FALSE, warning=FALSE}
-loadPkg("Hmisc") # this package contains the describe function below
-describe(athletes$Weight)
-describe(athletes$Height)
-```
 ```{r medal}
 gold_medals <- subset(athletes, Medal == "Gold")
 silver_medals <- subset(athletes, Medal == "Silver")
@@ -164,11 +176,18 @@ hist(silver_medals$bmi, main="Silver Medal Athletes BMI", col = 'gray' )
 ## Bronze Medal Athletes BMI
 ```{r bronze, echo=F}
 
+
+#historgram of height broken down by gender
+ggplot(adult_athletes, aes(x=BMI, fill=BMI_Category))  + geom_histogram(color="gray7") + facet_wrap( ~ Sex, ncol=2) + scale_fill_discrete(name="", labels=c("Underweight", "Normal", "Overweight", "Obese")) 
+# + labs(title="BMI of Olympic Athletes \nOver 18 years old", y="Population", x="BMI")
+
+
 boxplot(bronze_medals$bmi, main="Bronze Medal Athletes BMI", ylab="BMI", col='brown')
+
 
 hist(bronze_medals$bmi, main="Bronze Medal Athletes BMI", col = 'brown' )
 ```
-```{r scatter, echo=F}
+```{r scatter_medal, echo=F}
 
 summer_gold <- subset (gold_medals, gold_medals$Season == "Summer" && Sport != "Art Competitions")
 winter_gold <- subset (gold_medals, gold_medals$Season == "Winter")
@@ -182,17 +201,31 @@ ggplot(data=winter_gold)+
   geom_point(mapping = aes(x=Weight, y=Height, color=Sport))
   ggtitle("Scatter plot of Winter Gold Medalists Height vs Weight")
 
-
-
 ```
 
+
+#historgram of height broken down by gender
+```{r hist_height}
+ggplot(female_athletes, aes(x=BMI, fill=BMI_Category))  + geom_histogram(color="gray7") + labs(title="Body Mass Index (BMI) of Female Olympic Athletes Over 18 years old", y="Population", x="BMI") + scale_fill_discrete(name="", labels=c("Underweight", "Normal", "Overweight", "Obese"))
+
+#boxplot of weight over BMI
+ggplot(data=adult_athletes, aes(x=BMI_Category, y=Height, fill=Sex)) + geom_boxplot() + theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 12, hjust = 1), axis.text.y = element_text(vjust = 1, size = 12, hjust = 1)) + labs(title="Boxplot of \nOlympic Height \nOver BMI", x="BMI") + scale_x_discrete(labels=c("Underweight", "Normal", "Overweight", "Obese")) 
+
+
+#boxplot of Height over BMI
+ggplot(data=adult_athletes, aes(x=BMI_Category, y=Weight, fill=Sex)) + geom_boxplot() + theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 12, hjust = 1), axis.text.y = element_text(vjust = 1, size = 12, hjust = 1)) + labs(title="Boxplot of \nOlympic Weight \nOver BMI", x="BMI") + scale_x_discrete(labels=c("Underweight", "Normal", "Overweight", "Obese")) 
+
+
+#boxplot of Age over BMI
+ggplot(data=adult_athletes, aes(x=BMI_Category, y=Age, fill=Sex)) + geom_boxplot() + theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 12, hjust = 1), axis.text.y = element_text(vjust = 1, size = 12, hjust = 1)) + labs(title="Boxplot of \nOlympic Age \nOver BMI", x="BMI") + scale_x_discrete(labels=c("Underweight", "Normal", "Overweight", "Obese")) 
+
+```
 # How do Olympic athletes with medals measure up in BMI?
-```{r removeDups, echo=F}
+```{r BMI_Calculation}
 
 medal_athletes <- subset(athletes, !is.na(Medal))
 dim(medal_athletes)
 medal_athletes[["BMI"]] <- (medal_athletes$Weight/gold_medals$Height/gold_medals$Height) * 10000
-
 
 
 medal_athletes <- medal_athletes %>% mutate(Category = case_when(
@@ -229,14 +262,62 @@ df1 <- na.omit(df1)
 # Correlation matrix
 corr <- round(cor(df1), 1)
 
-# Plot
-ggcorrplot(corr, hc.order = TRUE, 
-           type = "lower", 
-           lab = TRUE, 
-           #lab_size = 3, 
-           method="circle", 
-           title="medal_athletes", 
-           ggtheme=theme_bw)
+```
+
+```{r medal_athletes_boxplots}
+medal_athletes <- subset(adult_athletes, Medal == "Gold" | Medal == "Silver" | Medal == "Bronze")
 
 
+gold_medals <- subset(adult_athletes, Medal == "Gold")
+silver_medals <- subset(adult_athletes, Medal == "Silver")
+bronze_medals <- subset(adult_athletes, Medal == "Bronze")
+
+#boxplot BMI for events with most medal
+most_medal_events <- c("Swimming", "Rowing",
+"Ice Hockey", "Hockey", "Gymnastics", "Fencing", "Football", "Canoeing", "Basketball", "Wrestling")
+popular_events <- subset(medal_athletes, Sport %in% most_medal_events)
+ggplot(data=popular_events, aes(x=Sport, y=BMI, fill=Sex)) + geom_boxplot() +
+geom_hline(yintercept=c(18.5), linetype="dashed", color="green")+
+geom_hline(yintercept=c(25), linetype="dashed", color="blue")+
+geom_hline(yintercept=c(30), linetype="dashed", color="red")+
+theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 9, hjust = 1), axis.text.y = element_text(vjust = 1, size = 9)) + labs(title="Boxplot of BMI for Olympic Athletes \nwith a Medal in most popular events") + 
+scale_y_continuous(breaks = seq(10, 35,5),limits=c(12, 38))+
+scale_color_manual(labels = c("Underweight", "Normal","Overweight"))
+```
+
+```{r BMI_Summer_Athletes}
+#boxplot BMI for Summer athletes
+summer_events <- subset(medal_athletes, Season == "Summer")
+ggplot(data=summer_events, aes(x=Sport, y=BMI, fill=Sex)) + geom_boxplot() +
+geom_hline(yintercept=c(18.5), linetype="dashed", color="green")+
+geom_hline(yintercept=c(25), linetype="dashed", color="blue")+
+geom_hline(yintercept=c(30), linetype="dashed", color="red")+
+theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 9, hjust = 1), axis.text.y = element_text(vjust = 1, size = 9)) + labs(title="Boxplot of BMI for Summer Olympic Athletes \nwith a Medal") + 
+scale_y_continuous(breaks = seq(10, 35,5),limits=c(12, 38))+
+scale_color_manual(labels = c("Underweight", "Normal","Overweight"))
+```
+  
+```{r BMI_Winter_athletes}
+#boxplot BMI for Winter athletes
+Winter_events <- subset(medal_athletes, Season == "Winter")
+ggplot(data=Winter_events, aes(x=Sport, y=BMI, fill=Sex)) + geom_boxplot() + 
+geom_hline(yintercept=c(18.5), linetype="dashed", color="green")+
+geom_hline(yintercept=c(25), linetype="dashed", color="blue")+
+geom_hline(yintercept=c(30), linetype="dashed", color="red")+
+  theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 9, hjust = 1), axis.text.y = element_text(vjust = 1, size = 9)) + labs(title="Boxplot of BMI for Winter Olympic Athletes \nin Top 10 Events") +scale_y_continuous(breaks = seq(10, 35,5),limits=c(12, 38))
+```
+
+```{r t-intervals}
+tinterval.bmi.c95.male = t.test(x=adult_athletes$BMI, conf.level=0.95)
+tinterval.bmi.c95.female = t.test(x=adult_athletes$BMI, conf.level=0.95)
+
+```
+
+Variable |      Gender          | level 0.99 |
+---------|----------------------|------------|
+BMI      | Sex  = M | [`r format(tinterval.bmi.c95.male$conf.int,digits=5)`] 
+BMI     | Sex = F  | [`r format(tinterval.bmi.c95.female$conf.int,digits=5)`]  
+
+```{r t-test}
+t.test(BMI~Sex, data=adult_athletes)
 ```
