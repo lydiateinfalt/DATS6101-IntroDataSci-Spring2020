@@ -50,12 +50,14 @@ We were able to find a dataset called `120 years of Olympic history: athletes an
 The report is organized as follows:
 
 1. Summary of Dataset
-2. Description of Data/Descriptive Stats
-3. BMI of Olympic Athletes
-4. Geographical Data
-5. Name Data
-6. Changes in Weight/Height over the Decades
-7. Age Data
+2. Description of Data
+3. What are the body types of Olympic Athletes? (BMI Data)
+4. Where do Olympians come from? (Geographical Data)
+5. GDP Data Goes Here?
+6. Are there any common names among Olympians? (Name Data)
+7. Have there been any body trends among Olympians over the years? (Trends Over Time)
+8. Are Olympic Athletes a certain age? (Age Data)
+9. Discussion And Conclusion
 
 
 # Summary of Dataset
@@ -95,7 +97,7 @@ data_sport <- split(athlete_events_noNA, athlete_events_noNA$Sport)
 ```
 
 
-# Description of Data/Descriptive Stats
+# Description of Data
 
 We can look at the top 10 events by number of athetes participating in these events. We can show this in a table or in a bar chart.
 
@@ -133,13 +135,13 @@ In list form:
 9. Basketball
 10. Wrestling
 
-# BMI of Olympic Athletes
-
-# Graphical Representation of Data
+# BMI Data
 
 # Geographical Data
 
-# Olympic Name Data
+# GDP Data
+
+# Name Data
 
 # Trends Over Time
 
@@ -649,41 +651,38 @@ df1980s <- athlete_events_noNA[athlete_events_noNA$Decade == "1980s", ]
 df1990s <- athlete_events_noNA[athlete_events_noNA$Decade == "1990s", ]
 df2000s <- athlete_events_noNA[athlete_events_noNA$Decade == "2000s", ]
 df2010s <- athlete_events_noNA[athlete_events_noNA$Decade == "2010s", ]
-#histograms
-#ggplot(df1890s, aes(x=Weight)) + geom_histogram()
-#ggplot(df1900s, aes(x=Weight)) + geom_histogram()
-#ggplot(df1910s, aes(x=Weight)) + geom_histogram()
-#ggplot(df1920s, aes(x=Weight)) + geom_histogram()
-#ggplot(df1930s, aes(x=Weight)) + geom_histogram()
-#ggplot(df1940s, aes(x=Weight)) + geom_histogram()
-#ggplot(df1950s, aes(x=Weight)) + geom_histogram()
-#ggplot(df1960s, aes(x=Weight)) + geom_histogram()
-#ggplot(df1970s, aes(x=Weight)) + geom_histogram()
-#ggplot(df1980s, aes(x=Weight)) + geom_histogram()
-#ggplot(df1990s, aes(x=Weight)) + geom_histogram()
-#ggplot(df2000s, aes(x=Weight)) + geom_histogram()
-#ggplot(df2010s, aes(x=Weight)) + geom_histogram(aes(y=..density..), colour="black", fill="white") + geom_density(alpha=.2, fill="#FF6666") 
 #make plots
+mean_weight <- mean(athlete_events_noNA$Weight)
+mean_height <- mean(athlete_events_noNA$Height)
 hist_decade_weight <- ggplot(athlete_events_noNA, aes(x=Weight, color=Decade)) +
-  geom_histogram(aes(y=..density..)) + 
+  geom_histogram(aes(y=..density..), binwidth = 3) + 
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 12, hjust = 1),
         axis.text.y = element_text(vjust = 1, size = 12, hjust = 1), 
         panel.border = element_rect(colour = "black", fill=NA, size=1)) + 
   labs(title="Histogram of \nOlympic Weights [kg] \nOver The Decades", 
-       x="weight [kg]")
+       x="weight [kg]") 
 
 hist_decade_height <- ggplot(athlete_events_noNA, aes(x=Height, color=Decade)) +
-  geom_histogram(aes(y=..density..)) + 
+  geom_histogram(aes(y=..density..), binwidth = 2) + 
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 12, hjust = 1),
         axis.text.y = element_text(vjust = 1, size = 12, hjust = 1), 
         panel.border = element_rect(colour = "black", fill=NA, size=1)) + 
+  labs(title="Histogram of \nOlympic Heights [kg] \nOver The Decades", 
+       x="height [cm]") 
+
+hist_decade_weight2 <- ggplot(athlete_events_noNA, aes(x=Weight, color=Decade)) + 
+  geom_histogram(aes(y=..density..), position="identity") + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 12, hjust = 1), 
+        axis.text.y = element_text(vjust = 1, size = 12, hjust = 1)) + 
+  labs(title="Histogram of \nOlympic Weights [kg] \nOver The Decades", x="weight [kg]") 
+
+hist_decade_height2 <- ggplot(athlete_events_noNA, aes(x=Height, color=Decade)) + 
+  geom_histogram(aes(y=..density..), position="identity") + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 12, hjust = 1), 
+        axis.text.y = element_text(vjust = 1, size = 12, hjust = 1)) + 
   labs(title="Histogram of \nOlympic Heights [kg] \nOver The Decades", x="height [cm]") 
-
-hist_decade_weight2 <- ggplot(athlete_events_noNA, aes(x=Weight, color=Decade)) + geom_histogram(aes(y=..density..), position="identity") + theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 12, hjust = 1), axis.text.y = element_text(vjust = 1, size = 12, hjust = 1)) + labs(title="Histogram of \nOlympic Weights [kg] \nOver The Decades", x="weight [kg]") 
-
-hist_decade_height2 <- ggplot(athlete_events_noNA, aes(x=Height, color=Decade)) + geom_histogram(aes(y=..density..), position="identity") + theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 12, hjust = 1), axis.text.y = element_text(vjust = 1, size = 12, hjust = 1)) + labs(title="Histogram of \nOlympic Heights [kg] \nOver The Decades", x="height [cm]") 
 
 boxplot_decade_weight <- ggplot(data=athlete_events_noNA, aes(x=Decade, y=Weight, fill=Decade)) + 
   geom_boxplot() + 
@@ -701,9 +700,17 @@ boxplot_decade_height <- ggplot(data=athlete_events_noNA, aes(x=Decade, y=Height
         panel.border = element_rect(colour = "black", fill=NA, size=1)) + 
   labs(title="Boxplot of \nOlympic Heights [kg] \nOver The Decades", x="height [cm]") 
 
-qqplot_decade_weight <- ggplot(athlete_events_noNA, aes(sample = Weight, color=Decade)) + stat_qq() + stat_qq_line() + labs(title="Normal Q-Q plot of \nOlympic Weights [kg] \nOver The Decades") 
+qqplot_decade_weight <- ggplot(athlete_events_noNA, 
+            aes(sample = Weight, color=Decade)) + 
+  stat_qq() + 
+  stat_qq_line() + 
+  labs(title="Normal Q-Q plot of \nOlympic Weights [kg] \nOver The Decades") 
 
-qqplot_decade_height <- ggplot(athlete_events_noNA, aes(sample = Height, color=Decade)) + stat_qq() + stat_qq_line() + labs(title="Normal Q-Q plot of \nOlympic Heights [cm] \nOver The Decades") 
+qqplot_decade_height <- ggplot(athlete_events_noNA, 
+                               aes(sample = Height, color=Decade)) + 
+  stat_qq() + 
+  stat_qq_line() + 
+  labs(title="Normal Q-Q plot of \nOlympic Heights [cm] \nOver The Decades") 
 #show plots
 #grid.arrange(hist_decade_weight, boxplot_decade_weight, hist_decade_height, boxplot_decade_height, ncol = 2, nrow = 2)
 grid.arrange(hist_decade_weight, boxplot_decade_weight, ncol = 2, nrow = 1)
@@ -867,7 +874,6 @@ ggplot(data = winter_medalist,
 ```
 
 Just as with the Summer Games we see that, on average, male athletes tend to be older than female athletes.
-
 
 
 # Discussion & Conclusion
