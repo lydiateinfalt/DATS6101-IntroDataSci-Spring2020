@@ -1,39 +1,64 @@
 ---
 title: "Olympics_EDA"
 author: "LNT"
-date: "1/31/2020"
-output: html_document
+date: "03/07/2020"
+output:
+ rmdformats::readthedown:
+    highlight: kate
+    code_folding: hide
 ---
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+
 
 ```{r basicfcn, include=F}
 loadPkg = function(x) { if (!require(x,character.only=T, quietly =T)) { install.packages(x,dep=T,repos="http://cran.us.r-project.org"); if(!require(x,character.only=T, quietly = T)) stop("Package not found") } }
 ```
+```{r load_packages}
 
-```{r Q1, include=T}
+loadPkg("ggplot2")
+loadPkg("rmdformats")
+loadPkg("knitr")
+```
+
+```{r setup, echo=FALSE, cache=FALSE}
+
+
+## Global options
+options(max.print="75")
+opts_chunk$set(echo=FALSE,
+	             cache=TRUE,
+               prompt=FALSE,
+               tidy=TRUE,
+               comment=NA,
+               message=FALSE,
+               warning=FALSE)
+opts_knit$set(width=75)
+```
+
+```{r read_data}
 # Load data
 # 
 athletes <- read.csv("athlete_events.csv") 
 
 colnames(athletes)
-loadPkg("dplyr")
-loadPkg("ggplot2")
+
 
 ```
 # Find the statistics (summary) of the heights, weights, and ages of all Olympic Athletes 
 
-```{r HWA, echo=F} 
-
-dim(athletes)
-summary(athletes$Height)
-summary(athletes$Weight)
-summary(athletes$Age)
+```{r structure, echo=F} 
+NROW(athletes)
+str(athletes)
 ```
 ```{r weight}
 
-hist(athletes$Weight, main="Histogram of Olympians weight", xlab="Weight (kg)", col = 'green' )
+
+w <- ggplot(athletes, aes(x=Weight, fill=Sex)) 
+
+#historgram of height broken down by gender
+w + geom_histogram(color="gray7") + xlab("weight (kg)")  + facet_wrap( ~ Sex, ncol=2)
+
+
+#hist(athletes$Weight, main="Histogram of Olympians weight", xlab="Weight (kg)", col = 'green' )
 boxplot(athletes$Weight, main="Boxplot of Olympians weight", ylab="Weight (cm)", col = 'red' )
 qqnorm(athletes$Weight, main="Q-Q plot of Olympians weight") 
 qqline(athletes$Weight)
@@ -44,11 +69,11 @@ ks.test(athletes$Weight,pnorm) # Kolmogorov-Smirnov Tests against normal distrib
 
 ## Height 
 ```{r Height}
-loadPkg("ggplot2")
+
 h <- ggplot(athletes, aes(x=Height, fill=Sex)) 
 
-#historgram of height broken down by gender
-h + geom_histogram(color="gray7") + xlab("height (cm)")  + facet_wrap( ~ Sex, ncol=2)
+#histogram of height broken down by gender
+h + geom_histogram(color="gray7",aes(y=..density..)) + xlab("height (cm)")  + facet_wrap( ~ Sex, ncol=2)
 
 boxplot(athletes$Height, main="Boxplot of Olympians Height", ylab="Height (cm)", col = 'tomato4' )
 
@@ -60,30 +85,92 @@ ks.test(athletes$Height,pnorm) # Kolmogorov-Smirnov Tests against normal distrib
 
 ```
 ## Age 
-```{r Age, echo=F}
-hist(athletes$Age, main="Histogram of Olympians Age", xlab="Age (years)", col = 'Purple' )
-boxplot(athletes$Age, main="Boxplot of Olympians Age", ylab="Age (cm)", col = 'Beige' )
+```{r Age}
+a <-  ggplot(athletes, aes(x=Age, fill=Sex)) 
+
+
+#histogram of height broken down by gender
+a + geom_histogram(color="gray7") + xlab("age")  + facet_wrap( ~ Sex, ncol=2) 
+
+boxplot(athletes$Age, main="Boxplot of Olympians Age", ylab="Age", col = 'Beige' )
 qqnorm(athletes$Age, main="Q-Q plot of Olympians Age") 
 qqline(athletes$Age)
-#shapiro.test(athletes$Height) # Unable to use Shapiro-Wilk test for normality because sample size must be between 3 and 5000
+# Unable to use Shapiro-Wilk test for normality because sample size must be between 3 and 5000
 ks.test(athletes$Age,pnorm) # Kolmogorov-Smirnov Tests against normal distribution
 
 
 ```
 
+```{r outlierKD2}
+# Fix outliers
+outlierKD2 <- function(df, var, rm=FALSE) { 
+    #' Original outlierKD functino by By Klodian Dhana,
+    #' https://www.r-bloggers.com/identify-describe-plot-and-remove-the-outliers-from-the-dataset/
+    #' Check outliers, and option to remove them, save as a new dataframe. 
+    #' @param df The dataframe.
+    #' @param var The variable in the dataframe to be checked for outliers
+    #' @param rm Boolean. Whether to remove outliers or not.
+    #' @return The dataframe with outliers replaced by NA if rm==TRUE, or df if nothing changed
+    #' @examples
+    #' outlierKD2(mydf, height, FALSE)
+    #' mydf = outlierKD2(mydf, height, TRUE)
+    #' mydfnew = outlierKD2(mydf, height, TRUE)
+    dt = df # duplicate the dataframe for potential alteration
+    var_name <- eval(substitute(var),eval(dt))
+    na1 <- sum(is.na(var_name))
+    m1 <- mean(var_name, na.rm = T)
+    par(mfrow=c(2, 2), oma=c(0,0,3,0))
+    boxplot(var_name, main="With outliers")
+    hist(var_name, main="With outliers", xlab=NA, ylab=NA)
+    outlier <- boxplot.stats(var_name)$out
+    mo <- mean(outlier)
+    var_name <- ifelse(var_name %in% outlier, NA, var_name)
+    boxplot(var_name, main="Without outliers")
+    hist(var_name, main="Without outliers", xlab=NA, ylab=NA)
+    title("Outlier Check", outer=TRUE)
+    na2 <- sum(is.na(var_name))
+    cat("Outliers identified:", na2 - na1, "\n")
+    cat("Propotion (%) of outliers:", round((na2 - na1) / sum(!is.na(var_name))*100, 1), "\n")
+    cat("Mean of the outliers:", round(mo, 2), "\n")
+    m2 <- mean(var_name, na.rm = T)
+    cat("Mean without removing outliers:", round(m1, 2), "\n")
+    cat("Mean if we remove outliers:", round(m2, 2), "\n")
+    
+    # response <- readline(prompt="Do you want to remove outliers and to replace with NA? [yes/no]: ")
+    # if(response == "y" | response == "yes"){
+    if(rm){
+        dt[as.character(substitute(var))] <- invisible(var_name)
+        #assign(as.character(as.list(match.call())$dt), dt, envir = .GlobalEnv)
+        cat("Outliers successfully removed", "\n")
+        return(invisible(dt))
+    } else {
+        cat("Nothing changed", "\n")
+        return(invisible(df))
+    }
+}
+```
 
 ```{r removeWeightOutliers, results='hide'}
 athletes = outlierKD2(athletes,Weight,TRUE)
 athletes = outlierKD2(athletes,Age,TRUE)
 sd.weight <- sd(athletes$Weight, na.rm = TRUE)
 mean.weight <- mean(athletes$Weight, na.rm = TRUE)
+sd.height <- sd(athletes$Height, na.rm = TRUE)
+mean.height <- mean(athletes$Height, na.rm = TRUE)
+sd.age <- sd(athletes$Age, na.rm = TRUE)
+mean.age <- mean(athletes$Age, na.rm = TRUE)
 
+
+round(mean.weight, digits=1)
+round(sd.weight, digits=1)
+
+round(mean.height, digits=1)
+round(sd.height, digits=1)
+
+round(mean.age)
+round(sd.age)
 
 ```
-Standard deviation height `r sd.height`
-Mean height `r mean.height`
-Standard deviation weight `r sd.weight`
-Mean Weight `r mean.weight`
 
 
 
@@ -92,8 +179,8 @@ Mean Weight `r mean.weight`
 ```{r replot_weight}
 a1 <- ggplot(athletes, aes(x=Weight, fill=Sex)) 
 
-#historgram of height broken down by gender
-a1 + geom_histogram(color="gray7", binwidth = 4) + xlab("Weight (kg)") + facet_wrap( ~ Sex, ncol=2)
+#histogram of weight broken down by gender
+a1 + geom_histogram(color="gray7", binwidth = 4,aes(y=..density..)) + xlab("weight (kg)") + facet_wrap( ~ Sex, ncol=2)
 
 
 
@@ -108,8 +195,8 @@ qqline(athletes$Weight)
 ```{r replot_Age}
 a1 <- ggplot(athletes, aes(x=Age, fill=Sex)) 
 
-#historgram of height broken down by gender
-a1 + geom_histogram(color="gray7", binwidth = 1) + xlab("age") + facet_wrap( ~ Sex, ncol=2)
+#histogram of height broken down by gender
+a1 + geom_histogram(color="gray7", binwidth = 1, aes(y=..density..)) + xlab("age") + facet_wrap( ~ Sex, ncol=2)
 
 boxplot(athletes$Age, main="Boxplot of Olympians Age", ylab="Age", col = 'orange' )
 qqnorm(athletes$Age, main="Q-Q plot of Olympians Age") 
@@ -117,8 +204,8 @@ qqline(athletes$Age)
 ```
 
 ```{r, echo = F}
-pnorm(z80height) # pnorm to find the probability
-qnorm(pnorm(z80height)) # qnorm to find the z-value, the inverse of pnorm.  In this case, the answer is just z80height
+#pnorm(z80height) # pnorm to find the probability
+#qnorm(pnorm(z80height)) # qnorm to find the z-value, the inverse of pnorm.  In this case, the answer is just z80height
 ```
 
 ```{r, echo=TRUE}
@@ -131,11 +218,11 @@ gold_medals <- subset(athletes, Medal == "Gold")
 silver_medals <- subset(athletes, Medal == "Silver")
 bronze_medals <- subset(athletes, Medal == "Bronze")
 
-gold_medals[["bmi"]] <- (gold_medals$Weight/gold_medals$Height/gold_medals$Height) * 10000
+gold_medals[["BMI"]] <- (gold_medals$Weight/gold_medals$Height/gold_medals$Height) * 10000
 
-silver_medals[["bmi"]] <- (silver_medals$Weight/silver_medals$Height/silver_medals$Height) * 10000
+silver_medals[["BMI"]] <- (silver_medals$Weight/silver_medals$Height/silver_medals$Height) * 10000
 
-bronze_medals[["bmi"]] <- (bronze_medals$Weight/bronze_medals$Height/bronze_medals$Height) * 10000
+bronze_medals[["BMI"]] <- (bronze_medals$Weight/bronze_medals$Height/bronze_medals$Height) * 10000
 summary(gold_medals$Height)
 summary(silver_medals$Height)
 summary(bronze_medals$Height)
@@ -143,7 +230,7 @@ summary(bronze_medals$Height)
 
 # Weight
 ## Gold, Silver and Bronze Medal Athletes
-```{r Weight, echo=F}
+```{r Weight_medals, echo=F}
 summary(gold_medals$Weight)
 summary(silver_medals$Weight)
 summary(bronze_medals$Weight)
@@ -151,41 +238,41 @@ summary(bronze_medals$Weight)
 
 # BMI 
 ## Gold, Silver and Bronze Medal Athletes
-```{r BMI}
-summary(gold_medals$bmi)
-summary(silver_medals$bmi)
-summary(bronze_medals$bmi)
+```{r BMI_medals}
+summary(gold_medals$BMI)
+summary(silver_medals$BMI)
+summary(bronze_medals$BMI)
 ```
 ```{r loading,echo=F}
 
 ```
 
 ## Gold Medal Athletes BMI
-```{r gold, echo=F}
+```{r gold_BMI, echo=F}
 
-boxplot(gold_medals$bmi, main="Gold Medal Athletes BMI", ylab="weight (lbs)", col='gold')
-hist(gold_medals$bmi, main="Gold Medal BMI", col = 'Gold' ) 
+boxplot(gold_medals$BMI, main="Gold Medal Athletes BMI", ylab="weight (lbs)", col='gold')
+hist(gold_medals$BMI, main="Gold Medal BMI", col = 'Gold' ) 
 
 ```
 ## Silver Medal Athletes BMI
-```{r silver, echo =F}
+```{r silver_BMI, echo =F}
 
-boxplot(silver_medals$bmi, main="Silver Medal Athletes BMI", ylab="BMI", col='gray')
-hist(silver_medals$bmi, main="Silver Medal Athletes BMI", col = 'gray' ) 
+boxplot(silver_medals$BMI, main="Silver Medal Athletes BMI", ylab="BMI", col='gray')
+hist(silver_medals$BMI, main="Silver Medal Athletes BMI", col = 'gray' ) 
 ```
 ## Bronze Medal Athletes BMI
-```{r bronze, echo=F}
+```{r bronze_BMI, echo=F}
 
 
-#historgram of height broken down by gender
-ggplot(adult_athletes, aes(x=BMI, fill=BMI_Category))  + geom_histogram(color="gray7") + facet_wrap( ~ Sex, ncol=2) + scale_fill_discrete(name="", labels=c("Underweight", "Normal", "Overweight", "Obese")) 
+#histogram of height broken down by gender
+ggplot(bronze_medals, aes(x=BMI, fill=BMI))  + geom_histogram(color="gray7", aes(y=..density..)) + facet_wrap( ~ Sex, ncol=2) + scale_fill_discrete(name="", labels=c("Underweight", "Normal", "Overweight", "Obese")) 
 # + labs(title="BMI of Olympic Athletes \nOver 18 years old", y="Population", x="BMI")
 
 
-boxplot(bronze_medals$bmi, main="Bronze Medal Athletes BMI", ylab="BMI", col='brown')
+boxplot(bronze_medals$BMI, main="Bronze Medal Athletes BMI", ylab="BMI", col='brown')
 
 
-hist(bronze_medals$bmi, main="Bronze Medal Athletes BMI", col = 'brown' )
+hist(bronze_medals$BMI, main="Bronze Medal Athletes BMI", col = 'brown' )
 ```
 ```{r scatter_medal, echo=F}
 
@@ -203,10 +290,35 @@ ggplot(data=winter_gold)+
 
 ```
 
+```{r bmi}
+#source: CDC https://www.cdc.gov/healthyweight/assessing/bmi/adult_bmi/index.html
+adult_athletes <- athletes %>% filter(Age>=20)
+  
+#bmi = weight (kg) / [height (m)]^2
+adult_athletes[["BMI"]] <- (adult_athletes$Weight/adult_athletes$Height/adult_athletes$Height) * 10000
 
-#historgram of height broken down by gender
+
+
+
+
+```
+
+```{r bmi_02, echo=F}
+
+adult_athletes <- adult_athletes  %>% mutate(BMI_Category = case_when(
+  adult_athletes $BMI < 18.5 ~ 1,
+  adult_athletes $BMI >= 18.5 & adult_athletes $BMI < 25 ~ 2,
+  adult_athletes $BMI >= 25 & adult_athletes $BMI < 30 ~ 3,
+  TRUE ~ 4
+))
+
+adult_athletes$BMI_Category <- as.factor(adult_athletes$BMI_Category)
+
+
+```
+
+#histogram of height broken down by gender
 ```{r hist_height}
-ggplot(female_athletes, aes(x=BMI, fill=BMI_Category))  + geom_histogram(color="gray7") + labs(title="Body Mass Index (BMI) of Female Olympic Athletes Over 18 years old", y="Population", x="BMI") + scale_fill_discrete(name="", labels=c("Underweight", "Normal", "Overweight", "Obese"))
 
 #boxplot of weight over BMI
 ggplot(data=adult_athletes, aes(x=BMI_Category, y=Height, fill=Sex)) + geom_boxplot() + theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 12, hjust = 1), axis.text.y = element_text(vjust = 1, size = 12, hjust = 1)) + labs(title="Boxplot of \nOlympic Height \nOver BMI", x="BMI") + scale_x_discrete(labels=c("Underweight", "Normal", "Overweight", "Obese")) 
@@ -220,51 +332,13 @@ ggplot(data=adult_athletes, aes(x=BMI_Category, y=Weight, fill=Sex)) + geom_boxp
 ggplot(data=adult_athletes, aes(x=BMI_Category, y=Age, fill=Sex)) + geom_boxplot() + theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 12, hjust = 1), axis.text.y = element_text(vjust = 1, size = 12, hjust = 1)) + labs(title="Boxplot of \nOlympic Age \nOver BMI", x="BMI") + scale_x_discrete(labels=c("Underweight", "Normal", "Overweight", "Obese")) 
 
 ```
+
+
+
 # How do Olympic athletes with medals measure up in BMI?
-```{r BMI_Calculation}
-
-medal_athletes <- subset(athletes, !is.na(Medal))
-dim(medal_athletes)
-medal_athletes[["BMI"]] <- (medal_athletes$Weight/gold_medals$Height/gold_medals$Height) * 10000
 
 
-medal_athletes <- medal_athletes %>% mutate(Category = case_when(
-  medal_athletes$BMI < 18.5 ~ "Underweight",
-  medal_athletes$BMI >= 18.5 & medal_athletes$BMI < 25 ~ "Normal Weight",
-  medal_athletes$BMI >= 25 & medal_athletes$BMI < 30 ~ "Overweight",
-  TRUE ~ "Obese"
-))
-
-ggplot(data=medal_athletes, aes(x=Category, y=Age, fill=Sex))+ geom_boxplot()
-                
-
-df <- medal_athletes[,c("ID", "Category")]
-df <- df %>% group_by(Category) %>% tally()
-
-barplot(df$n, names.arg=c("Underweight", "Normal", "Overweight", "Obese"), col= "green")
-
-g <- ggplot(medal_athletes, aes(x=Age, y=BMI, fill=Sex))
-
-# Scatterplot
-g + geom_point() + 
-  geom_smooth(method="lm", se=F) +
-  labs( 
-       y="Age", 
-       x="BMI", 
-       title="Scatter plot of Age vs BMI")
-```
-```{r corr}
-loadPkg("ggcorrplot")
-df1 <- medal_athletes[,c("Age", "Height", "Weight", "BMI")]
-df1 <- na.omit(df1)
-
-
-# Correlation matrix
-corr <- round(cor(df1), 1)
-
-```
-
-```{r medal_athletes_boxplots}
+```{r popular_events}
 medal_athletes <- subset(adult_athletes, Medal == "Gold" | Medal == "Silver" | Medal == "Bronze")
 
 
@@ -272,15 +346,24 @@ gold_medals <- subset(adult_athletes, Medal == "Gold")
 silver_medals <- subset(adult_athletes, Medal == "Silver")
 bronze_medals <- subset(adult_athletes, Medal == "Bronze")
 
+
+
+#histogram of height broken down by gender
+ggplot(adult_athletes, aes(x=BMI, fill=BMI_Category))  + geom_histogram(color="gray7", aes(y=..density..)) + facet_wrap( ~ Sex, ncol=2) + scale_fill_discrete(name="", labels=c("Underweight", "Normal", "Overweight", "Obese")) 
+# + labs(title="BMI of Olympic Athletes \nOver 18 years old", y="Population", x="BMI")
+
+
 #boxplot BMI for events with most medal
 most_medal_events <- c("Swimming", "Rowing",
 "Ice Hockey", "Hockey", "Gymnastics", "Fencing", "Football", "Canoeing", "Basketball", "Wrestling")
 popular_events <- subset(medal_athletes, Sport %in% most_medal_events)
+
+
 ggplot(data=popular_events, aes(x=Sport, y=BMI, fill=Sex)) + geom_boxplot() +
 geom_hline(yintercept=c(18.5), linetype="dashed", color="green")+
 geom_hline(yintercept=c(25), linetype="dashed", color="blue")+
 geom_hline(yintercept=c(30), linetype="dashed", color="red")+
-theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 9, hjust = 1), axis.text.y = element_text(vjust = 1, size = 9)) + labs(title="Boxplot of BMI for Olympic Athletes \nwith a Medal in most popular events") + 
+theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 5, hjust = 1), axis.text.y = element_text(vjust = 1, size = 5)) + labs(title="Boxplot of BMI for Olympic Athletes \nwith a Medal") + 
 scale_y_continuous(breaks = seq(10, 35,5),limits=c(12, 38))+
 scale_color_manual(labels = c("Underweight", "Normal","Overweight"))
 ```
@@ -305,6 +388,39 @@ geom_hline(yintercept=c(18.5), linetype="dashed", color="green")+
 geom_hline(yintercept=c(25), linetype="dashed", color="blue")+
 geom_hline(yintercept=c(30), linetype="dashed", color="red")+
   theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 9, hjust = 1), axis.text.y = element_text(vjust = 1, size = 9)) + labs(title="Boxplot of BMI for Winter Olympic Athletes \nin Top 10 Events") +scale_y_continuous(breaks = seq(10, 35,5),limits=c(12, 38))
+```
+
+
+
+
+
+```{r team_analysis}
+loadPkg("kableExtra")
+loadPkg("dplyr")
+US_team <- subset(popular_events,NOC=="USA")
+x <- popular_events %>%
+  group_by(Sport) %>% summarise_at(c("Height", "Weight", "BMI"), mean, na.rm = TRUE) %>% arrange(Height)
+names(x) <- c("Sport", "Height", "Weight", "BMI")
+
+convert_m_fi <- function(xm){
+    xm_ft <- xm * 39.3701 / 12
+    xm_ft_int <- floor(xm * 39.3701 / 12)
+    xm_inch <- round((xm_ft - xm_ft_int) * 12, 1)
+    return(paste(xm_ft_int, "ft", xm_inch, "in"))
+}
+x_metric <- data.frame(x$Sport, round(x$Height/100, digits = 2), round(x$Weight), round(x$BMI))
+names(x_metric)<- c("Sport", "Avg Height (m)", "Avg Weight (kg)", "BMI")
+
+#x_imperial <- data.frame(x$Sport, convert_m_fi(x$Height/100), round(x$Weight*2.2046226218,1), round(x$BMI) ) 
+#names(x_imperial) <- c("Sport", " Mean Height", " Mean Weight (lbs)", "Mean BMI")
+
+
+#kable(x_imperial) %>%
+  #kable_styling(bootstrap_options = c("striped", "hover"))
+
+kable(x_metric, caption="US Olympic Team") %>%
+  kable_styling(bootstrap_options = c("striped", "hover"))
+
 ```
 
 ```{r t-intervals}
