@@ -7,10 +7,13 @@ output:
     highlight: kate
 ---
 
+```{r basicfcn, include=F}
+loadPkg = function(x) { if (!require(x,character.only=T, quietly =T)) { install.packages(x,dep=T,repos="http://cran.us.r-project.org"); if(!require(x,character.only=T, quietly = T)) stop("Package not found") } }
+```
 
 ```{r setup, echo=FALSE, cache=FALSE}
-library(knitr)
-library(rmdformats)
+loadPkg("knitr")
+loadPkg("rmdformats")
 
 ## Global options
 options(max.print="75")
@@ -29,9 +32,9 @@ opts_knit$set(width=75)
 data <- read.csv('data/athlete_events.csv',stringsAsFactors=FALSE) # affects NA conversion to zero
 population <- read.csv('data/pop.csv')
 gdp <- read.csv('data/gdp.csv')
-library(dplyr)
-library(ggplot2)
-library(tidyverse)
+loadPkg("dplyr")
+loadPkg("ggplot2")
+loadPkg("tidyverse")
 # install.packages("rmdformats")
 # Create Dataframes
 olympics_df <- data.frame(data) #Olympics Data
@@ -148,6 +151,7 @@ oly_gpby_NOC_Yr_Mdl <- data.frame(oly_gpby_NOC_Yr_Mdl)
 oly_gpby_NOC_Yr_Mdl_sprt <- olympics_mil %>% group_by(Sport, NOC, Year, Medal) %>% count(Medal,)
 oly_gpby_NOC_Yr_Mdl_sprt <- data.frame(oly_gpby_NOC_Yr_Mdl_sprt)
 oly_gpby_NOC_Yr_Mdl_sprt <- oly_gpby_NOC_Yr_Mdl_sprt %>% filter(Medal!=0)
+oly_gpby_NOC_Yr_Mdl_sprt$Sport_fac <- (as.numeric(as.factor(oly_gpby_NOC_Yr_Mdl_sprt$Sport)))
 
 # Merging oly_gpby_NOC_Yr_Mdl df with population and GDP dataframe
 pop_gdp_mil_df_oly <- merge(oly_gpby_NOC_Yr_Mdl, pop_gdp_mil_df, 
@@ -177,6 +181,7 @@ ggplot(pop_gdp_mil_df_oly%>%filter(Medal!=0), aes(x=NOC, y=n, fill=Medal))+
 
 ```{r, 3b. Scatter, histogram and correlation pair plots, incldue=TRUE}
 scatter_1<-data.frame(unique(pop_gdp_mil_df_oly$NOC))
+loadPkg("psych")
 
 for(i in 1: nrow(scatter_1)) {
 dummy_set<-subset(pop_gdp_mil_df_oly, pop_gdp_mil_df_oly$NOC==scatter_1$unique.pop_gdp_mil_df_oly.NOC.[i])
@@ -193,38 +198,30 @@ dummy_set<-subset(pop_gdp_mil_df_oly, pop_gdp_mil_df_oly$NOC==scatter_1$unique.p
 scatter_1$aveGDPpC[i]<-mean(dummy_set$GDPpC)
 }
 
-ggplot(scatter_1, aes(x=avePop, y=totMedals)) +
-  geom_point()
-ggplot(scatter_1, aes(x=aveGDP, y=totMedals)) +
-  geom_point()
-ggplot(scatter_1, aes(x=aveGDPpC, y=totMedals)) +
-  geom_point()
+eliminateOuts_1 <- scatter_1 %>% filter(!scatter_1$aveGDPpC %in% boxplot.stats(scatter_1$aveGDPpC)$out)
 
-ggplot(scatter_1, aes(x=log(avePop), y=totMedals)) +
-  geom_point()
-ggplot(scatter_1, aes(x=log(aveGDP), y=totMedals)) +
-  geom_point()
-ggplot(scatter_1, aes(x=log(aveGDPpC), y=totMedals)) +
-  geom_point()
+
+par( mfrow = c( 2, 2 ), oma = c( 0, 0, 2, 0 ) )
+
+plot(x=scatter_1$aveGDPpC, y=scatter_1$totMedals, main="Scatter plot ave, GDPpC & won medals w/ outliers", xlab="Average GDP per capita (USD pp)", ylab="Number of medals won", col = 'red')
+
+plot(x=eliminateOuts_1$aveGDPpC, y=eliminateOuts_1$totMedals, main="Scatter plot ave. GDPpC & won medals w/o outliers", xlab="Average GDP per capita (USD pp)", ylab="Number of medals won", col = 'red')
+
+hist(scatter_1$aveGDPpC, main="Histogram of ave. GDPpC & medals w/ outliers", xlab="Average GDP per capita (USD pp)", col = 'green', breaks =100)
+
+hist(eliminateOuts_1$aveGDPpC, main="Histogram of ave. GDPpC & medals w/o outliers", xlab="Average GDP per capita (USD pp)", col = 'green', breaks =100)
+
+title("Relationship between GDP per capita and winning medals at the Olympics", outer=TRUE)
+
+pairs.panels(scatter_1) # skips a position, if needed.
 
 scatter_1_stats= summary(scatter_1)
 
-hist(scatter_1$avePop, breaks =100)
-hist(scatter_1$aveGDP, breaks =100 )
-hist(scatter_1$aveGDPpC, breaks =100)
-hist(log(scatter_1$aveGDPpC), breaks =100)
-
-# install.packages('psych')
-library(psych)
-pairs.panels(scatter_1)
-# install.packages('corrplot')
-# library(corrplot)
-# corrplot.mixed(cor(corr_olympics), order="hclust", tl.col="black")
 ```
 
 ```{r, 3c. Scatter and correlation pair plots, incldue=TRUE}
 
-scatter_2 <- pop_gdp_mil_df_sprt %>% group_by(Sport, NOC) %>% tally(n)
+scatter_2 <- pop_gdp_mil_df_sprt %>% group_by(Sport, Sport_fac, NOC) %>% tally(n)
 scatter_2 <- data.frame(scatter_2)
 
 
@@ -257,4 +254,40 @@ for(x in Sportz){
   pairs.panels(dummy, main=x)
 }
 
+```
+
+```{r}
+scatter_2 <- pop_gdp_mil_df_sprt %>% group_by(Sport, NOC) %>% tally(n)
+scatter_2 <- data.frame(scatter_2)
+
+most_medal_events <- c("Swimming", "Rowing",
+"Ice Hockey", "Hockey", "Gymnastics", "Fencing", "Football", "Canoeing", "Basketball", "Wrestling")
+
+for(i in 1: nrow(scatter_2)) {
+dummy_set<-subset(pop_gdp_mil_df_sprt, pop_gdp_mil_df_sprt$NOC==scatter_2$NOC[i])
+scatter_2$avePop[i]<-mean(unique(dummy_set$Population))
+
+dummy_set<-subset(pop_gdp_mil_df_sprt, pop_gdp_mil_df_sprt$NOC==scatter_2$NOC[i])
+scatter_2$aveGDP[i]<-mean(unique(dummy_set$GDP))
+
+dummy_set<-subset(pop_gdp_mil_df_sprt, pop_gdp_mil_df_sprt$NOC==scatter_2$NOC[i])
+scatter_2$aveGDPpC[i]<-mean(unique(dummy_set$GDPpC))
+}
+
+par( mfrow = c( 1, 3 ), oma = c( 0, 0, 2, 0 ) )
+
+plot(x=subset(scatter_2$aveGDPpC, scatter_2$Sport=="Equestrianism"), y=subset(scatter_2$n, scatter_2$Sport=="Equestrianism"), main="Equestrianism - strong positive correlation", xlab="Average GDP per capita (USD pp)", ylab="Number of medals won", col = 'red')
+
+plot(x=subset(scatter_2$aveGDPpC, scatter_2$Sport=="Boxing"), y=subset(scatter_2$n, scatter_2$Sport=="Boxing"), main="Boxing - neutral relationship", xlab="Average GDP per capita (USD pp)", ylab="Number of medals won", col = 'red')
+
+plot(x=subset(scatter_2$aveGDPpC, scatter_2$Sport=="Synchronized Swimming"), y=subset(scatter_2$n, scatter_2$Sport=="Synchronized Swimming"), main="Synchronized Swimming - negative correlation", xlab="Average GDP per capita (USD pp)", ylab="Number of medals won", col = 'red')
+
+ggplot(scatter_2a, aes(x= aveGDPpC, y=n, color=Sport))+ geom_point()+
+  ggtitle("Sport scatter plot") +
+  xlab("Dose (mg)") + ylab("Teeth length")
+
+# scatter_2b = scatter_2 %>% filter(Sport == "Equestrianism" | Sport == "Rhythmic Gymnastics" |Sport == "Boxing" )
+pairs.panels(scatter_2%>%filter(Sport=="Equestrianism"), main='Equestrianism correlation pairplot')
+pairs.panels(scatter_2%>%filter(Sport=="Boxing"), main='Boxing correlation pairplot')
+pairs.panels(scatter_2%>%filter(Sport=="Synchronized Swimming"), main='Synchronized Swimming correlation pairplot')
 ```
