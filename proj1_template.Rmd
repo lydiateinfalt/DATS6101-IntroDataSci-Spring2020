@@ -694,7 +694,7 @@ boxplot_decade_weight <- ggplot(data=athlete_events_noNA, aes(x=Decade, y=Weight
   theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 12, hjust = 1), 
         axis.text.y = element_text(vjust = 1, size = 12, hjust = 1), 
         panel.border = element_rect(colour = "black", fill=NA, size=1)) + 
-  labs(title="Boxplot of \nOlympic Weights [kg] \nOver The Decades", x="weight [kg]") 
+  labs(title="Boxplot of \nOlympic Weights [kg] \nOver The Decades", x="Decade") 
 
 boxplot_decade_height <- ggplot(data=athlete_events_noNA, aes(x=Decade, y=Height, fill=Decade)) + 
   geom_boxplot() + 
@@ -702,7 +702,7 @@ boxplot_decade_height <- ggplot(data=athlete_events_noNA, aes(x=Decade, y=Height
   theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 12, hjust = 1), 
         axis.text.y = element_text(vjust = 1, size = 12, hjust = 1), 
         panel.border = element_rect(colour = "black", fill=NA, size=1)) + 
-  labs(title="Boxplot of \nOlympic Heights [kg] \nOver The Decades", x="height [cm]") 
+  labs(title="Boxplot of \nOlympic Heights [kg] \nOver The Decades", x="Decade") 
 
 qqplot_decade_weight <- ggplot(athlete_events_noNA, 
             aes(sample = Weight, color=Decade)) + 
