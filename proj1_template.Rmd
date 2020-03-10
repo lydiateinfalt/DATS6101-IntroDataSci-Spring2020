@@ -32,9 +32,12 @@ loadPkg = function(x) { if (!require(x,character.only=T, quietly =T)) { install.
 ```
 
 ```{r libraries}
-library(ggplot2)
-require(gridExtra)
-library(kableExtra)
+#library(ggplot2)
+#require(gridExtra)
+#library(kableExtra)
+loadPkg("ggplot2")
+loadPkg("gridExtra")
+loadPkg("kableExtra")
 ```
 
 ![](tokyo_2020.png)
@@ -473,7 +476,7 @@ Wrestling_M_data <- do.call(rbind, Map(data.frame, Year = years_M_Wrestling, Mea
 sort_count_sports_data[2:11,] %>%
   kable() %>%
   kable_styling(bootstrap_options = c("striped", "hover")) %>%
-  column_spec(1, bold = T, border_right = T) %>%
+  #column_spec(1, bold = T, border_right = T) %>%
   row_spec(1, background = "black", color = "white") %>%
   row_spec(2, background = "red", color = "black") %>%
   row_spec(3, background = "pink", color = "black") %>%
@@ -654,6 +657,7 @@ df2010s <- athlete_events_noNA[athlete_events_noNA$Decade == "2010s", ]
 #make plots
 mean_weight <- mean(athlete_events_noNA$Weight)
 mean_height <- mean(athlete_events_noNA$Height)
+
 hist_decade_weight <- ggplot(athlete_events_noNA, aes(x=Weight, color=Decade)) +
   geom_histogram(aes(y=..density..), binwidth = 3) + 
   theme_minimal() +
@@ -711,6 +715,7 @@ qqplot_decade_height <- ggplot(athlete_events_noNA,
   stat_qq() + 
   stat_qq_line() + 
   labs(title="Normal Q-Q plot of \nOlympic Heights [cm] \nOver The Decades") 
+
 #show plots
 #grid.arrange(hist_decade_weight, boxplot_decade_weight, hist_decade_height, boxplot_decade_height, ncol = 2, nrow = 2)
 grid.arrange(hist_decade_weight, boxplot_decade_weight, ncol = 2, nrow = 1)
@@ -718,6 +723,37 @@ grid.arrange(hist_decade_height, boxplot_decade_height, ncol = 2, nrow = 1)
 #grid.arrange(hist_decade_weight2, hist_decade_height2, ncol = 2, nrow = 1)
 #grid.arrange(qqplot_decade_weight, qqplot_decade_height, ncol = 2, nrow = 1)
 ```
+
+We have the boxplots, but we can use ANOVA to test the difference between the means in the weight and height data over the decades. ANOVA testing we have that:
+
+1. Null hypothesis: the means of the different groups are the same
+2. Alternative hypothesis: At least one sample mean is not equal to the others.
+
+In one-way ANOVA test, a significant $p$-value indicates that some of the group means are different, but we don’t know which pairs of groups are different. We use a significance level of $\alpha = 0.05$.
+
+```{r anova_testing}
+decade_weight <- aov(Weight ~ Decade, data=athlete_events_noNA)
+decade_height <- aov(Height ~ Decade, data=athlete_events_noNA)
+```
+
+Here is the ANOVA test for the weight data over the decades
+
+```{r anova_weight}
+summary(decade_weight)
+p_val_weight <- summary(decade_weight)[[1]][["Pr(>F)"]][[1]]
+```
+
+We can see that for `aov(Weight ~ Decade, data=athlete_events_noNA)`, we have $p$ = `r formatC(p_val_weight, format = "e", digits = 3)`. The $p$-value here is not significant, which means that over time, the mean weight of the athletes is not significantly different between the decades.
+
+Here is the ANOVA test for the height data over the decades
+
+```{r anova_height}
+summary(decade_height) 
+p_val_height <- summary(decade_height)[[1]][["Pr(>F)"]][[1]]
+```
+
+We can see that for `aov(Height ~ Decade, data=athlete_events_noNA)`, we have $p$ = `r formatC(p_val_height, format = "e", digits = 3)`. The $p$-value here is very significant, which means that over time, the mean height of the athletes is significantly different between the decades.
+
 
 
 # Age Data
