@@ -32,9 +32,12 @@ loadPkg = function(x) { if (!require(x,character.only=T, quietly =T)) { install.
 ```
 
 ```{r libraries}
-library(ggplot2)
-require(gridExtra)
-library(kableExtra)
+#library(ggplot2)
+#require(gridExtra)
+#library(kableExtra)
+loadPkg("ggplot2")
+loadPkg("gridExtra")
+loadPkg("kableExtra")
 ```
 
 ![](tokyo_2020.png)
@@ -50,7 +53,14 @@ We were able to find a dataset called `120 years of Olympic history: athletes an
 The report is organized as follows:
 
 1. Summary of Dataset
-2. others
+2. Description of Data
+3. What are the body types of Olympic Athletes? (BMI Data)
+4. Where do Olympians come from? (Geographical Data)
+5. GDP Data Goes Here?
+6. Are there any common names among Olympians? (Name Data)
+7. Have there been any body trends among Olympians over the years? (Trends Over Time)
+8. Are Olympic Athletes a certain age? (Age Data)
+9. Discussion And Conclusion
 
 
 # Summary of Dataset
@@ -60,7 +70,7 @@ The data looks like the following:
 ```{r input_data}
 athlete_events <- data.frame(read.csv("athlete_events.csv"))
 noc_regions <- data.frame(read.csv("noc_regions.csv"))
-summary(athlete_events)
+#summary(athlete_events)
 str(athlete_events)
 ```
 
@@ -90,7 +100,7 @@ data_sport <- split(athlete_events_noNA, athlete_events_noNA$Sport)
 ```
 
 
-# Description of Data/Descriptive Stats
+# Description of Data
 
 We can look at the top 10 events by number of athetes participating in these events. We can show this in a table or in a bar chart.
 
@@ -99,11 +109,20 @@ list_sports <- as.data.frame(table(athlete_events_noNA$Sport))[1]
 sport_counts <- as.data.frame(table(athlete_events_noNA$Sport))[2]
 count_sports_data <- do.call(rbind, Map(data.frame, "sport.names" = list_sports, "sport.counts" = sport_counts))
 sort_count_sports_data <- count_sports_data[order(-count_sports_data$sport.counts),]
-sort_count_sports_data[2:11,]
+sort_count_sports_data[1:11,]
+
 top10 <- sort_count_sports_data[2:11,][1]
+
 count_data <- data.frame("Events"=sort_count_sports_data[1:nrow(sort_count_sports_data)/3,][1], "Counts"=sort_count_sports_data[1:nrow(sort_count_sports_data)/3,][2])
 names(count_data) <- c("Events", "Counts")
-ggplot(data=count_data, aes(x=Events, y=Counts, color=Events)) + geom_bar(stat="identity") + theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 12, hjust = 1), axis.text.y = element_text(vjust = 1, size = 12, hjust = 1)) + labs(title="Barchart of events with most athletes", x="Event") 
+
+ggplot(data=count_data, aes(x=Events, y=Counts, color=Events)) + 
+  geom_bar(stat="identity") + 
+  theme_minimal() + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 12, hjust = 1), 
+        axis.text.y = element_text(vjust = 1, size = 12, hjust = 1), 
+        panel.border = element_rect(colour = "black", fill=NA, size=1)) + 
+  labs(title="Barchart of events with most athletes", x="Event") 
 ```
 
 In list form:
@@ -119,13 +138,13 @@ In list form:
 9. Basketball
 10. Wrestling
 
-# BMI of Olympic Athletes
-
-# Graphical Representation of Data
+# BMI Data
 
 # Geographical Data
 
-# Olympic Name Data
+# GDP Data
+
+# Name Data
 
 # Trends Over Time
 
@@ -445,20 +464,102 @@ Wrestling_M_data <- do.call(rbind, Map(data.frame, Year = years_M_Wrestling, Mea
 ```
 
 ```{r printlegend}
-plot.new()
-legend("center", c("Swimming", "Rowing", "Ice Hockey", "Hockey", "Gymnastics", "Fencing", "Football", "Canoeing", "Basketball", "Wrestling"), fill=c("black", "red", "pink", "coral", "orange", "gold", "green", "lightseagreen", "blue", "purple"))
+#plot.new()
+#legend("center", c("Swimming", "Rowing", "Ice Hockey", "Hockey", "Gymnastics", 
+#                   "Fencing", "Football", "Canoeing", "Basketball", "Wrestling"),
+#       fill=c("black", "red", "pink", "coral", "orange", "gold", "green", 
+#              "lightseagreen", "blue", "purple")
+       #xpd=TRUE,
+       #horiz=TRUE
+#       )
 #box()
+sort_count_sports_data[2:11,] %>%
+  kable() %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>%
+  #column_spec(1, bold = T, border_right = T) %>%
+  row_spec(1, background = "black", color = "white") %>%
+  row_spec(2, background = "red", color = "black") %>%
+  row_spec(3, background = "pink", color = "black") %>%
+  row_spec(4, background = "coral", color = "black") %>%
+  row_spec(5, background = "orange", color = "black") %>%
+  row_spec(6, background = "gold", color = "black") %>%
+  row_spec(7, background = "green", color = "black") %>%
+  row_spec(8, background = "lightseagreen", color = "black") %>%
+  row_spec(9, background = "blue", color = "white") %>%
+  row_spec(10, background = "purple", color = "white") 
 ```
 
 ```{r testggplot, echo=F}
 # women weight
-women_weight_plot <- ggplot(Swimming_F_data, aes(x=Year, y=Mean_Weight, group=1)) + geom_line(color='black') + geom_line(data = Rowing_F_data, colour='red') + geom_line(data = Ice.Hockey_F_data, colour='pink') + geom_line(data = Hockey_F_data, colour='coral') + geom_line(data = Gymnastics_F_data, colour='orange') + geom_line(data = Fencing_F_data, colour='gold') + geom_line(data = Football_F_data, colour='green') + geom_line(data = Canoeing_F_data, colour='lightseagreen') + geom_line(data = Basketball_F_data, colour='blue') + geom_line(data = Wrestling_F_data, colour='purple') + theme_minimal() + theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 10, hjust = 1), axis.text.y = element_text(vjust = 1, size = 12, hjust = 1)) + labs(title="Scatterplot of Olympic Women's \nAverage Weights [kg] Over Time", x="year", y="weight [kg]", color = "Legend") 
+women_weight_plot <- ggplot(Swimming_F_data, aes(x=Year, y=Mean_Weight, group=1)) +
+  geom_line(color='black') + geom_line(data = Rowing_F_data, colour='red') +
+  geom_line(data = Ice.Hockey_F_data, colour='pink') + 
+  geom_line(data = Hockey_F_data, colour='coral') + 
+  geom_line(data = Gymnastics_F_data, colour='orange') + 
+  geom_line(data = Fencing_F_data, colour='gold') + 
+  geom_line(data = Football_F_data, colour='green') + 
+  geom_line(data = Canoeing_F_data, colour='lightseagreen') + 
+  geom_line(data = Basketball_F_data, colour='blue') + 
+  geom_line(data = Wrestling_F_data, colour='purple') + 
+  theme_minimal() + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 10, hjust = 1),
+        axis.text.y = element_text(vjust = 1, size = 12, hjust = 1), 
+        panel.border = element_rect(colour = "black", fill=NA, size=1)) + 
+  labs(title="Scatterplot of Olympic Women's \nAverage Weights [kg] Over Time", 
+       x="year", y="weight [kg]", color = "Legend") 
 # women height
-women_height_plot <- ggplot(Swimming_F_data, aes(x=Year, y=Mean_Height, group=1)) + geom_line(color="black") + labs(title="Scatterplot of Olympic Women's \nAverage Heights [cm] Over Time", x="year", y="height [cm]") + geom_line(data = Rowing_F_data, colour='red') + geom_line(data = Ice.Hockey_F_data, colour='pink') + geom_line(data = Hockey_F_data, colour='coral') + geom_line(data = Gymnastics_F_data, colour='orange') + geom_line(data = Fencing_F_data, colour='gold') + geom_line(data = Football_F_data, colour='green') + geom_line(data = Canoeing_F_data, colour='lightseagreen') + geom_line(data = Basketball_F_data, colour='blue') + geom_line(data = Wrestling_F_data, colour='purple') + theme_minimal() + theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 10, hjust = 1), axis.text.y = element_text(vjust = 1, size = 12, hjust = 1))
+women_height_plot <- ggplot(Swimming_F_data, aes(x=Year, y=Mean_Height, group=1)) + 
+  geom_line(color="black") + 
+  labs(title="Scatterplot of Olympic Women's \nAverage Heights [cm] Over Time", 
+       x="year", y="height [cm]") + 
+  geom_line(data = Rowing_F_data, colour='red') + geom_line(data = Ice.Hockey_F_data, colour='pink') + 
+  geom_line(data = Hockey_F_data, colour='coral') + 
+  geom_line(data = Gymnastics_F_data, colour='orange') + 
+  geom_line(data = Fencing_F_data, colour='gold') + 
+  geom_line(data = Football_F_data, colour='green') + 
+  geom_line(data = Canoeing_F_data, colour='lightseagreen') + 
+  geom_line(data = Basketball_F_data, colour='blue') + 
+  geom_line(data = Wrestling_F_data, colour='purple') + 
+  theme_minimal() + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 10, hjust = 1), 
+        axis.text.y = element_text(vjust = 1, size = 12, hjust = 1), 
+        panel.border = element_rect(colour = "black", fill=NA, size=1))
 # men weight
-men_weight_plot <- ggplot(Swimming_M_data, aes(x=Year, y=Mean_Weight, group=1)) + geom_line(color="black") + labs(title="Scatterplot of Olympic Men's \nAverage Weights [kg] Over Time", x="year", y="weight [kg]") + geom_line(data = Rowing_M_data, colour='red') + geom_line(data = Ice.Hockey_M_data, colour='pink') + geom_line(data = Hockey_M_data, colour='coral') + geom_line(data = Gymnastics_M_data, colour='orange') + geom_line(data = Fencing_M_data, colour='gold') + geom_line(data = Football_M_data, colour='green') + geom_line(data = Canoeing_M_data, colour='lightseagreen') + geom_line(data = Basketball_M_data, colour='blue') + geom_line(data = Wrestling_M_data, colour='purple') + theme_minimal() + theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 8, hjust = 1), axis.text.y = element_text(vjust = 1, size = 12, hjust = 1))
+men_weight_plot <- ggplot(Swimming_M_data, aes(x=Year, y=Mean_Weight, group=1)) + 
+  geom_line(color="black") + 
+  labs(title="Scatterplot of Olympic Men's \nAverage Weights [kg] Over Time", 
+       x="year", y="weight [kg]") + 
+  geom_line(data = Rowing_M_data, colour='red') + 
+  geom_line(data = Ice.Hockey_M_data, colour='pink') + 
+  geom_line(data = Hockey_M_data, colour='coral') + 
+  geom_line(data = Gymnastics_M_data, colour='orange') + 
+  geom_line(data = Fencing_M_data, colour='gold') + 
+  geom_line(data = Football_M_data, colour='green') + 
+  geom_line(data = Canoeing_M_data, colour='lightseagreen') + 
+  geom_line(data = Basketball_M_data, colour='blue') + 
+  geom_line(data = Wrestling_M_data, colour='purple') + 
+  theme_minimal() + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 8, hjust = 1), 
+        axis.text.y = element_text(vjust = 1, size = 12, hjust = 1), 
+        panel.border = element_rect(colour = "black", fill=NA, size=1))
 # men height
-men_height_plot <- ggplot(Swimming_M_data, aes(x=Year, y=Mean_Height, group=1)) + geom_line(color="black") + labs(title="Scatterplot of Olympic Men's \nAverage Heights [cm] Over Time", x="year", y="height [cm]") + geom_line(data = Rowing_M_data, colour='red') + geom_line(data = Ice.Hockey_M_data, colour='pink') + geom_line(data = Hockey_M_data, colour='coral') + geom_line(data = Gymnastics_M_data, colour='orange') + geom_line(data = Fencing_M_data, colour='gold') + geom_line(data = Football_M_data, colour='green') + geom_line(data = Canoeing_M_data, colour='lightseagreen') + geom_line(data = Basketball_M_data, colour='blue') + geom_line(data = Wrestling_M_data, colour='purple') + theme_minimal() + theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 8, hjust = 1), axis.text.y = element_text(vjust = 1, size = 12, hjust = 1))
+men_height_plot <- ggplot(Swimming_M_data, aes(x=Year, y=Mean_Height, group=1)) + 
+  geom_line(color="black") + 
+  labs(title="Scatterplot of Olympic Men's \nAverage Heights [cm] Over Time", 
+       x="year", y="height [cm]") + 
+  geom_line(data = Rowing_M_data, colour='red') + 
+  geom_line(data = Ice.Hockey_M_data, colour='pink') + 
+  geom_line(data = Hockey_M_data, colour='coral') + 
+  geom_line(data = Gymnastics_M_data, colour='orange') + 
+  geom_line(data = Fencing_M_data, colour='gold') + 
+  geom_line(data = Football_M_data, colour='green') + 
+  geom_line(data = Canoeing_M_data, colour='lightseagreen') + 
+  geom_line(data = Basketball_M_data, colour='blue') + 
+  geom_line(data = Wrestling_M_data, colour='purple') + 
+  theme_minimal() + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 8, hjust = 1), 
+        axis.text.y = element_text(vjust = 1, size = 12, hjust = 1), 
+        panel.border = element_rect(colour = "black", fill=NA, size=1))
 # plots
 grid.arrange(women_weight_plot, men_weight_plot, women_height_plot, men_height_plot,
                     #labels = c("A", "B", "C", "D"),
@@ -553,36 +654,68 @@ df1980s <- athlete_events_noNA[athlete_events_noNA$Decade == "1980s", ]
 df1990s <- athlete_events_noNA[athlete_events_noNA$Decade == "1990s", ]
 df2000s <- athlete_events_noNA[athlete_events_noNA$Decade == "2000s", ]
 df2010s <- athlete_events_noNA[athlete_events_noNA$Decade == "2010s", ]
-#histograms
-#ggplot(df1890s, aes(x=Weight)) + geom_histogram()
-#ggplot(df1900s, aes(x=Weight)) + geom_histogram()
-#ggplot(df1910s, aes(x=Weight)) + geom_histogram()
-#ggplot(df1920s, aes(x=Weight)) + geom_histogram()
-#ggplot(df1930s, aes(x=Weight)) + geom_histogram()
-#ggplot(df1940s, aes(x=Weight)) + geom_histogram()
-#ggplot(df1950s, aes(x=Weight)) + geom_histogram()
-#ggplot(df1960s, aes(x=Weight)) + geom_histogram()
-#ggplot(df1970s, aes(x=Weight)) + geom_histogram()
-#ggplot(df1980s, aes(x=Weight)) + geom_histogram()
-#ggplot(df1990s, aes(x=Weight)) + geom_histogram()
-#ggplot(df2000s, aes(x=Weight)) + geom_histogram()
-#ggplot(df2010s, aes(x=Weight)) + geom_histogram(aes(y=..density..), colour="black", fill="white") + geom_density(alpha=.2, fill="#FF6666") 
 #make plots
-hist_decade_weight <- ggplot(athlete_events_noNA, aes(x=Weight, color=Decade)) + geom_histogram(aes(y=..density..)) + theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 12, hjust = 1), axis.text.y = element_text(vjust = 1, size = 12, hjust = 1)) + labs(title="Histogram of \nOlympic Weights [kg] \nOver The Decades", x="weight [kg]") 
+mean_weight <- mean(athlete_events_noNA$Weight)
+mean_height <- mean(athlete_events_noNA$Height)
 
-hist_decade_height <- ggplot(athlete_events_noNA, aes(x=Height, color=Decade)) + geom_histogram(aes(y=..density..)) + theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 12, hjust = 1), axis.text.y = element_text(vjust = 1, size = 12, hjust = 1)) + labs(title="Histogram of \nOlympic Heights [kg] \nOver The Decades", x="height [cm]") 
+hist_decade_weight <- ggplot(athlete_events_noNA, aes(x=Weight, color=Decade)) +
+  geom_histogram(aes(y=..density..), binwidth = 3) + 
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 12, hjust = 1),
+        axis.text.y = element_text(vjust = 1, size = 12, hjust = 1), 
+        panel.border = element_rect(colour = "black", fill=NA, size=1)) + 
+  labs(title="Histogram of \nOlympic Weights [kg] \nOver The Decades", 
+       x="weight [kg]") 
 
-hist_decade_weight2 <- ggplot(athlete_events_noNA, aes(x=Weight, color=Decade)) + geom_histogram(aes(y=..density..), position="identity") + theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 12, hjust = 1), axis.text.y = element_text(vjust = 1, size = 12, hjust = 1)) + labs(title="Histogram of \nOlympic Weights [kg] \nOver The Decades", x="weight [kg]") 
+hist_decade_height <- ggplot(athlete_events_noNA, aes(x=Height, color=Decade)) +
+  geom_histogram(aes(y=..density..), binwidth = 2) + 
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 12, hjust = 1),
+        axis.text.y = element_text(vjust = 1, size = 12, hjust = 1), 
+        panel.border = element_rect(colour = "black", fill=NA, size=1)) + 
+  labs(title="Histogram of \nOlympic Heights [kg] \nOver The Decades", 
+       x="height [cm]") 
 
-hist_decade_height2 <- ggplot(athlete_events_noNA, aes(x=Height, color=Decade)) + geom_histogram(aes(y=..density..), position="identity") + theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 12, hjust = 1), axis.text.y = element_text(vjust = 1, size = 12, hjust = 1)) + labs(title="Histogram of \nOlympic Heights [kg] \nOver The Decades", x="height [cm]") 
+hist_decade_weight2 <- ggplot(athlete_events_noNA, aes(x=Weight, color=Decade)) + 
+  geom_histogram(aes(y=..density..), position="identity") + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 12, hjust = 1), 
+        axis.text.y = element_text(vjust = 1, size = 12, hjust = 1)) + 
+  labs(title="Histogram of \nOlympic Weights [kg] \nOver The Decades", x="weight [kg]") 
 
-boxplot_decade_weight <- ggplot(data=athlete_events_noNA, aes(x=Decade, y=Weight, fill=Decade)) + geom_boxplot() + theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 12, hjust = 1), axis.text.y = element_text(vjust = 1, size = 12, hjust = 1)) + labs(title="Boxplot of \nOlympic Weights [kg] \nOver The Decades", x="weight [kg]") 
+hist_decade_height2 <- ggplot(athlete_events_noNA, aes(x=Height, color=Decade)) + 
+  geom_histogram(aes(y=..density..), position="identity") + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 12, hjust = 1), 
+        axis.text.y = element_text(vjust = 1, size = 12, hjust = 1)) + 
+  labs(title="Histogram of \nOlympic Heights [kg] \nOver The Decades", x="height [cm]") 
 
-boxplot_decade_height <- ggplot(data=athlete_events_noNA, aes(x=Decade, y=Height, fill=Decade)) + geom_boxplot() + theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 12, hjust = 1), axis.text.y = element_text(vjust = 1, size = 12, hjust = 1)) + labs(title="Boxplot of \nOlympic Heights [kg] \nOver The Decades", x="height [cm]") 
+boxplot_decade_weight <- ggplot(data=athlete_events_noNA, aes(x=Decade, y=Weight, fill=Decade)) + 
+  geom_boxplot() + 
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 12, hjust = 1), 
+        axis.text.y = element_text(vjust = 1, size = 12, hjust = 1), 
+        panel.border = element_rect(colour = "black", fill=NA, size=1)) + 
+  labs(title="Boxplot of \nOlympic Weights [kg] \nOver The Decades", x="Decade") 
 
-qqplot_decade_weight <- ggplot(athlete_events_noNA, aes(sample = Weight, color=Decade)) + stat_qq() + stat_qq_line() + labs(title="Normal Q-Q plot of \nOlympic Weights [kg] \nOver The Decades") 
+boxplot_decade_height <- ggplot(data=athlete_events_noNA, aes(x=Decade, y=Height, fill=Decade)) + 
+  geom_boxplot() + 
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 12, hjust = 1), 
+        axis.text.y = element_text(vjust = 1, size = 12, hjust = 1), 
+        panel.border = element_rect(colour = "black", fill=NA, size=1)) + 
+  labs(title="Boxplot of \nOlympic Heights [kg] \nOver The Decades", x="Decade") 
 
-qqplot_decade_height <- ggplot(athlete_events_noNA, aes(sample = Height, color=Decade)) + stat_qq() + stat_qq_line() + labs(title="Normal Q-Q plot of \nOlympic Heights [cm] \nOver The Decades") 
+qqplot_decade_weight <- ggplot(athlete_events_noNA, 
+            aes(sample = Weight, color=Decade)) + 
+  stat_qq() + 
+  stat_qq_line() + 
+  labs(title="Normal Q-Q plot of \nOlympic Weights [kg] \nOver The Decades") 
+
+qqplot_decade_height <- ggplot(athlete_events_noNA, 
+                               aes(sample = Height, color=Decade)) + 
+  stat_qq() + 
+  stat_qq_line() + 
+  labs(title="Normal Q-Q plot of \nOlympic Heights [cm] \nOver The Decades") 
+
 #show plots
 #grid.arrange(hist_decade_weight, boxplot_decade_weight, hist_decade_height, boxplot_decade_height, ncol = 2, nrow = 2)
 grid.arrange(hist_decade_weight, boxplot_decade_weight, ncol = 2, nrow = 1)
@@ -591,11 +724,186 @@ grid.arrange(hist_decade_height, boxplot_decade_height, ncol = 2, nrow = 1)
 #grid.arrange(qqplot_decade_weight, qqplot_decade_height, ncol = 2, nrow = 1)
 ```
 
+We have the boxplots, but we can use ANOVA to test the difference between the means in the weight and height data over the decades. ANOVA testing we have that:
+
+1. Null hypothesis: the means of the different groups are the same
+2. Alternative hypothesis: At least one sample mean is not equal to the others.
+
+In one-way ANOVA test, a significant $p$-value indicates that some of the group means are different, but we don’t know which pairs of groups are different. We use a significance level of $\alpha = 0.05$.
+
+```{r anova_testing}
+decade_weight <- aov(Weight ~ Decade, data=athlete_events_noNA)
+decade_height <- aov(Height ~ Decade, data=athlete_events_noNA)
+```
+
+Here is the ANOVA test for the weight data over the decades
+
+```{r anova_weight}
+summary(decade_weight)
+p_val_weight <- summary(decade_weight)[[1]][["Pr(>F)"]][[1]]
+```
+
+We can see that for `aov(Weight ~ Decade, data=athlete_events_noNA)`, we have $p$ = `r formatC(p_val_weight, format = "e", digits = 3)`. The $p$-value here is not significant, which means that over time, the mean weight of the athletes is not significantly different between the decades.
+
+Here is the ANOVA test for the height data over the decades
+
+```{r anova_height}
+summary(decade_height) 
+p_val_height <- summary(decade_height)[[1]][["Pr(>F)"]][[1]]
+```
+
+We can see that for `aov(Height ~ Decade, data=athlete_events_noNA)`, we have $p$ = `r formatC(p_val_height, format = "e", digits = 3)`. The $p$-value here is very significant, which means that over time, the mean height of the athletes is significantly different between the decades.
 
 
 
-# Variance/Standard Deviation/Histograms
+# Age Data
 
-# Normality Tests
+```{r average_age}
+library("tidyverse")
+library("data.table")
+library(kableExtra)
+olympic <- read_csv("athlete_events.csv",
+                    col_types = cols(
+                      ID = col_character(),
+                      Name = col_character(),
+                      Sex = col_factor(levels = c("M","F")),
+                      Age =  col_integer(),
+                      Height = col_double(),
+                      Weight = col_double(),
+                      Team = col_character(),
+                      NOC = col_character(),
+                      Games = col_character(),
+                      Year = col_integer(),
+                      Season = col_factor(levels = c("Summer","Winter")),
+                      City = col_character(),
+                      Sport = col_character(),
+                      Event = col_character(),
+                      Medal = col_factor(levels = c("Gold","Silver","Bronze"))
+                      )
+                    )
+
+medalist <- olympic %>% 
+  filter(!is.na(Medal)) 
+
+medalist %>% 
+  group_by(Medal) %>% 
+  summarise(
+    mean = mean(Age, na.rm = TRUE)
+  ) %>%
+  kable() %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>%
+  column_spec(1, bold = T, border_right = T) %>%
+  row_spec(1, background = "gold") %>%
+  row_spec(2, background = "darkgray") %>%
+  row_spec(3, background = "tomato")
+```
+
+It appears that the mean age that an Olympic Medalist wins a medal is around 26 years old. We can also look at the ages of medal-winning athletes separated by the Summer and Winter Games. 
+
+```{r summer_games_ages}
+summer_medalist <-
+medalist %>% 
+  group_by(Year, Season, Medal) %>% 
+  filter(Season == "Summer") %>% 
+  summarise(
+    mean = mean(Age, na.rm = TRUE)
+  )
+
+summer_ages <- ggplot(data = summer_medalist, 
+       mapping = aes(x = Year, y= mean, group = Medal, color = Medal)) +
+  geom_point(size=2) +
+  geom_line() +
+  labs(title="Average Age of Olympic Medalists \nin the Summer Games", x="year", y="mean age [years]") +
+  theme_minimal() +
+  theme(panel.border = element_rect(colour = "black", fill=NA, size=1)) +
+  scale_color_manual(values=c("goldenrod1", "darkgray", "coral3")) 
+
+medalist_winter <-
+  medalist %>% 
+  group_by(Year, Season, Medal) %>% 
+  filter(Season == "Winter") %>% 
+  summarise(
+    mean = mean(Age, na.rm = TRUE)
+  )
+
+winter_ages <- ggplot(data = medalist_winter, mapping = aes(x= Year, y= mean, group = Medal, color = Medal)) +
+  geom_point(size=2) +
+  geom_line() +
+  labs(title="Average Age of Olympic Medalists \nin the Winter Games", 
+       x="year", y="mean age [years]") +
+  theme_minimal() +
+  theme(panel.border = element_rect(colour = "black", fill=NA, size=1)) +
+  scale_color_manual(values=c("goldenrod1", "darkgray", "coral3")) 
+
+grid.arrange(summer_ages, winter_ages, ncol = 2, nrow = 1)
+```
+
+From the plots we can see that between WW1 and WW2 the average age of medalists is decreasing, but after WW2 the average age temporarily rose. We see that the age begins to decrease until 1980 but then rises again after 1980. The age seems to plateau in the 2010s. 
+
+It seems that there are fewer peaks and dips in the Winter Games data than in the Summer Games data, where the Winter Athletes seem to have a smaller variance in age. We can look at the Summer and Winter Games together. 
+
+```{r compare_summer_winter}
+season_medalist <-
+medalist %>% 
+  group_by(Season, Year) %>% 
+  summarise(
+    mean = mean(Age, na.rm = TRUE)
+  )
+
+ggplot( data = season_medalist, 
+  mapping = aes(x= Year, y= mean, group = Season, color = Season)) +
+  geom_point(size=2) +
+  geom_line() +
+  labs(title="Average Age of Olympic Medalists Separated by Season", 
+       x="year", y="mean age [years]") +
+  theme_minimal() +
+  theme(panel.border = element_rect(colour = "black", fill=NA, size=1)) +
+  scale_color_manual(values=c("chocolate1", "cornflowerblue")) 
+```
+
+It appears that after the 1950s the athletes at the Winter Games, on average, are older. Both Summer and Winter Games experience an upward trend in ages after the 1980s. 
+
+We can also look at the breakdown of ages between Season and Gender.
+
+```{r age_sex_plots}
+summer_medalist_sex <-
+  medalist %>%
+  filter(Season == "Summer") %>% 
+  group_by(Year, Sex) %>% 
+    summarise(
+    mean = mean(Age, na.rm = TRUE)
+  )
+
+summer_ages_gender <- ggplot(data = summer_medalist_sex, 
+       mapping = aes(x = Year, y= mean, group = Sex, color = Sex)) +
+  geom_point(size=2) +
+  geom_line() +
+  labs(title="Average Age of Olympic Medalists \nin the Summer Games \nSeparated by Gender",
+       x="year", y="mean age [years]") +
+  theme_minimal() +
+  theme(panel.border = element_rect(colour = "black", fill=NA, size=1))
+
+winter_medalist <-
+  medalist %>% 
+  group_by(Year, Season, Sex) %>% 
+  filter(Season == "Winter") %>% 
+  summarise(
+    mean = mean(Age, na.rm = TRUE)
+  )
+
+winter_ages_gender <- ggplot(data = winter_medalist, 
+       mapping = aes(x = Year, y= mean, group = Sex, color = Sex)) +
+  geom_point(size=2) +
+  geom_line() +
+  labs(title="Average Age of Olympic Medalists \nin the Winter Games \nSeparated by Gender",
+       x="year", y="mean age [years]") +
+  theme_minimal() +
+  theme(panel.border = element_rect(colour = "black", fill=NA, size=1))
+
+grid.arrange(summer_ages_gender, winter_ages_gender, ncol = 2, nrow = 1)
+```
+
+When we look at the medal-winning athletes during the Summer Games by gender we see that in general men get medals at older ages than women do. Just as with the Summer Games we see that, on average, male athletes tend to be older than female athletes.
+
 
 # Discussion & Conclusion
