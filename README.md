@@ -4,6 +4,8 @@ This repo contains a collection of Izzy Illari's work for DATS 6101 Spring 2020 
 
 Also included is the work on the class project with fellow teammates Lucia Illari (loi2102@gwu.edu), Lydia Teinfalt (lteinfalt@gwu.edu), Omar Qusous (oqusous@gwu.edu), and Obumneke Amadi (obumneke_amadi2@gwu.edu).
 
+Note: Obumneke left part way through the project, but her work is still shown for the record. 
+
 To see a live version of the final project write up please go here [here](https://userweb.jlab.org/~izzy/DATS6101_Spring2020/proj1_template.html).
 
 Clone repo
