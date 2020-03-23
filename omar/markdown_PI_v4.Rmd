@@ -1,0 +1,319 @@
+---
+title: "Does The GDP and Population of a Country Affect the Number of Medals They Win and How Does It Affect the Sports They Excel In?"
+
+date: "`r Sys.Date()`"
+output:
+  rmdformats::readthedown:
+    highlight: kate
+---
+In this part of the report the wealth and population of a country will be explored in order to build a macro-level insight on how an athlete’s environment as indicated by the economic and demographic environment they live in affect their performance in the Olympics.
+
+```{r setup1, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r basicfcn, include=F}
+loadPkg = function(x) { if (!require(x,character.only=T, quietly =T)) { install.packages(x,dep=T,repos="http://cran.us.r-project.org"); if(!require(x,character.only=T, quietly = T)) stop("Package not found") } }
+```
+
+```{r setup2, echo=FALSE, cache=FALSE}
+loadPkg("knitr")
+loadPkg("rmdformats")
+
+## Global options
+options(max.print="75")
+opts_chunk$set(echo=FALSE,
+	             cache=TRUE,
+               prompt=FALSE,
+               tidy=TRUE,
+               comment=NA,
+               message=FALSE,
+               warning=FALSE)
+opts_knit$set(width=75)
+```
+# Datasets
+The olympics dataset was then merged with datasets containing the GDP and population of each country. The datasources were from:
+
+Population:
+
+https://knoema.com/UNWPP2019/world-population-prospects-2019
+
+GDP:
+
+https://data.worldbank.org/indicator/NY.GDP.MKTP.CD
+
+Both datasets had missing data for several past decades and for some of the countries that did not participate in the Olympics. However, for the countries that did participate and still had missing data- these were filled by extrapoilating the average of the years the preceded and followed.
+
+```{r, 1. Read and Save Data, include=FALSE}
+#Read data
+data <- read.csv('data/athlete_events.csv',stringsAsFactors=FALSE) # affects NA conversion to zero
+population <- read.csv('data/pop.csv')
+gdp <- read.csv('data/gdp.csv')
+loadPkg("dplyr")
+loadPkg("ggplot2")
+loadPkg("tidyverse")
+# install.packages("rmdformats")
+# Create Dataframes
+olympics_df <- data.frame(data) #Olympics Data
+pop_df <- data.frame(population) # Population
+gdp_df <- data.frame(gdp) # GDP
+```
+
+```{r, 2. Clean Data and Reshape it, include=F}
+colnames(pop_df) 
+unique(colnames(olympics_df))
+unique(olympics_df$Year)
+# I will take data from 2000- less missing data and the sports included are the same up to 2016
+olympics_mil <- olympics_df %>% filter(Year >= 2000)
+unique(olympics_mil$Year)
+
+pop_df_mil <- pop_df %>% select("Country.Code", "X2000", "X2002", "X2004",
+                                "X2006", "X2008","X2010","X2012", "X2014", "X2016")
+gdp_df_mil <- gdp_df %>% select("Country.Code", "X2000", "X2002", "X2004",
+                                "X2006", "X2008","X2010","X2012", "X2014", "X2016")
+# Rename columns
+colnames(pop_df_mil) = c("NOC", "2000", "2002", "2004", "2006", "2008", "2010",
+                         "2012","2014" ,"2016")
+colnames(gdp_df_mil) = c("NOC", "2000", "2002", "2004", "2006", "2008", "2010",
+                         "2012","2014" ,"2016")
+colnames(pop_df_mil)
+colnames(gdp_df_mil)
+Year <- c(2000, 2002, 2004, 2006, 2008, 2010, 2012, 2014, 2016)
+Year
+
+# Reshaping population data by stacking columns and rows differently to be
+# consistant with olympics' data
+pop_df_mil_t <- data.frame(t(pop_df_mil))
+# convert 
+pop_df_mil_t[] <- lapply(pop_df_mil_t, as.character)
+colnames(pop_df_mil_t) <- pop_df_mil_t[1,] # the first row will be the header
+pop_df_mil_t <- pop_df_mil_t[-1, ]          # removing the first row.
+pop_df_mil_t <- stack(pop_df_mil_t)
+colnames(pop_df_mil_t) = c('Population', 'NOC')
+pop_df_mil_t['Population'] <- lapply(pop_df_mil_t['Population'] , as.numeric)
+# length(pop_df_mil_t$Population)
+pop_df_mil_t$Year <- rep(Year, times = 264)
+
+# Reshaping GDP data by stacking columns and rows differently to be
+# consistant with olympics' data
+gdp_df_mil_t <- data.frame(t(gdp_df_mil))
+gdp_df_mil_t[] <- lapply(gdp_df_mil_t, as.character)
+colnames(gdp_df_mil_t) = gdp_df_mil_t[1,] # the first row will be the header
+gdp_df_mil_t = gdp_df_mil_t[-1, ]          # removing the first row.
+gdp_df_mil_t <- stack(gdp_df_mil_t)
+colnames(gdp_df_mil_t) = c('GDP', 'NOC')
+gdp_df_mil_t['GDP'] <- lapply(gdp_df_mil_t['GDP'] , as.numeric)
+# length(gdp_df_mil_t$GDP)
+gdp_df_mil_t$Year <- rep(Year, times = 264)
+
+# Merging popluation and GDP dataframes into one
+pop_gdp_mil_df = merge(gdp_df_mil_t, pop_df_mil_t, 
+                       by.x=c("NOC", "Year"), 
+                       by.y=c("NOC", "Year"))
+
+# checking NAN
+# sum(is.na(pop_gdp_mil_df$GDP))
+# sum(is.na(pop_gdp_mil_df$Population))
+
+# Replacing missing population values by in the new merged dataframe by interpolating the available years for each country
+for(i in seq_along(pop_gdp_mil_df$Population))
+  {
+  # if missing data is between 2000->2004, interpolate using the two ahead
+  if(is.na(pop_gdp_mil_df$Population[i]) & pop_gdp_mil_df$Year[i] <= 2004){
+    pop_gdp_mil_df$Population[i] = 
+      abs((pop_gdp_mil_df$Population[i+1]/pop_gdp_mil_df$Population[i+2])*
+            pop_gdp_mil_df$Population[i+1])
+  # if missing data is > 2004, interpolate using the two before
+    } else if (is.na(pop_gdp_mil_df$Population[i]) & pop_gdp_mil_df$Year[i] > 2004){
+    pop_gdp_mil_df$Population[i] = 
+      abs((pop_gdp_mil_df$Population[i-1]/pop_gdp_mil_df$Population[i-2])*
+            pop_gdp_mil_df$Population[i-1])
+  } else{0
+    }
+  }
+# same as above done for GPD
+for(i in seq_along(pop_gdp_mil_df$GDP))
+{
+  if(is.na(pop_gdp_mil_df$GDP[i]) & pop_gdp_mil_df$Year[i] <= 2004){
+    pop_gdp_mil_df$GDP[i] = 
+      abs((pop_gdp_mil_df$GDP[i+1]/pop_gdp_mil_df$GDP[i+2])*
+            pop_gdp_mil_df$GDP[i+1])
+  } else if (is.na(pop_gdp_mil_df$GDP[i]) & pop_gdp_mil_df$Year[i] > 2004){
+    pop_gdp_mil_df$GDP[i] = 
+      abs((pop_gdp_mil_df$GDP[i-1]/pop_gdp_mil_df$GDP[i-2])*
+            pop_gdp_mil_df$GDP[i-1])
+  } else{0
+  }
+}
+
+# Remainder of countries that have NA values do not particpate on the olympics
+pop_gdp_mil_df[which(is.na(pop_gdp_mil_df$Population)),]
+pop_gdp_mil_df[which(is.na(pop_gdp_mil_df$GDP)),]
+# length(unique(pop_gdp_mil_df$NOC))
+# unique(olympics_mil$Year)
+# setdiff(unique(pop_gdp_mil_df$NOC),unique(olympics_mil$NOC))
+olympics_mil <- olympics_mil %>% filter(!is.na(Height))
+olympics_mil <- olympics_mil %>% filter(!is.na(Weight))
+
+# replacing NA values for medals with zero
+sum(is.na(olympics_mil$Medal))
+olympics_mil$Medal[is.na(olympics_mil$Medal)] <- 0
+```
+
+```{r, 2. Creating final dataframes, echo=F}
+# counting medals won by each country
+oly_gpby_NOC_Yr_Mdl <- olympics_mil %>% group_by(NOC, Year, Medal) %>% tally()
+oly_gpby_NOC_Yr_Mdl <- data.frame(oly_gpby_NOC_Yr_Mdl)
+# counting medals won by each country for every sport
+oly_gpby_NOC_Yr_Mdl_sprt <- olympics_mil %>% group_by(Sport, NOC, Year, Medal) %>% count(Medal,)
+oly_gpby_NOC_Yr_Mdl_sprt <- data.frame(oly_gpby_NOC_Yr_Mdl_sprt)
+oly_gpby_NOC_Yr_Mdl_sprt <- oly_gpby_NOC_Yr_Mdl_sprt %>% filter(Medal!=0)
+oly_gpby_NOC_Yr_Mdl_sprt$Sport_fac <- (as.numeric(as.factor(oly_gpby_NOC_Yr_Mdl_sprt$Sport)))
+
+# Merging oly_gpby_NOC_Yr_Mdl df with population and GDP dataframe
+pop_gdp_mil_df_oly <- merge(oly_gpby_NOC_Yr_Mdl, pop_gdp_mil_df, 
+                       by.x=c("NOC", "Year"), 
+                       by.y=c("NOC", "Year"))
+# pop_gdp_mil_df_oly[which(is.na(pop_gdp_mil_df_oly$GDP)),]
+pop_gdp_mil_df_oly <- pop_gdp_mil_df_oly %>% filter(!is.na(GDP))
+pop_gdp_mil_df_oly$GDPpC <- pop_gdp_mil_df_oly$GDP/pop_gdp_mil_df_oly$Population
+# sum(pop_gdp_mil_df_oly$n)
+
+# Merging oly_gpby_NOC_Yr_Mdl_sprt df with population and GDP dataframe
+pop_gdp_mil_df_sprt <- merge(oly_gpby_NOC_Yr_Mdl_sprt, pop_gdp_mil_df, 
+                       by.x=c("NOC", "Year"), 
+                       by.y = c("NOC", "Year"), all.x = TRUE)
+
+# pop_gdp_mil_df_sprt[which(is.na(pop_gdp_mil_df_sprt$GDP)),]
+pop_gdp_mil_df_sprt <- pop_gdp_mil_df_sprt %>% filter(!is.na(GDP))
+pop_gdp_mil_df_sprt$GDPpC <- pop_gdp_mil_df_sprt$GDP/pop_gdp_mil_df_sprt$Population
+# sum(pop_gdp_mil_df_sprt$n)
+```
+
+# EDA
+
+As a first step to the EDA, for the year 2000 until present, bar charts of the total number of medals won by each country and gross domestic product per capita (GDPpC) were plotted for preliminary comparison.
+
+```{r, 3a. Bar chart: number of medals v country , include=TRUE}
+ggplot(pop_gdp_mil_df_oly%>%filter(Medal!=0), aes(x=reorder(NOC, -n), y=n, fill=Medal))+
+  geom_bar(stat='identity') + labs(x="Country (NOC)", y="Number of medals (n)")
+  ggtitle("Bar chart: number of medals v country")+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size=5))
+```
+
+```{r, 3b Bar chart: number of medals v GDPpC, include=TRUE}
+ggplot(pop_gdp_mil_df_oly%>%filter(Medal!=0), aes(x=reorder(NOC, -n), y=(GDPpC)))+
+  geom_bar(stat='identity') + labs(x="Country (NOC)", y="Gross Domestic Product (GDPpC) [USD/person")
+  ggtitle("Bar chart: number of medals v GDPpC")+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size=5))
+```
+
+Looking at a few randomly picked countries the following is  obsereved:
+
+| Country       | n           | GDPpC rank  |Population  |
+|---------------|-------------|-------------|------------|
+| Luxembourg    | 0           | 1st         |169th       |
+| Norway | 216 | 3rd | 119th |
+| USA | 1626 | 7th | 3rd |
+| Russia | 933 | 61st | 9th |
+| Jordan | 1 | 109th | 88th |
+| Ukraine | 161 |119th | 35th |
+
+The table does not directly show a clear and distinct relationship between countries winning medals and their GDP/population. Scatter plots, histograms and pair plots are shown below to further investigate the relationship. Outliers using
+
+### Relationship between Medals Won and Competing Country's GDP per Capita (year 2000-present)
+```{r, 3c. Scatter histogram and correlation pair plots, incldue=TRUE}
+scatter_1<-data.frame(unique(pop_gdp_mil_df_oly$NOC))
+loadPkg("psych")
+
+for(i in 1: nrow(scatter_1)) {
+dummy_set<-subset(pop_gdp_mil_df_oly, pop_gdp_mil_df_oly$NOC==scatter_1$unique.pop_gdp_mil_df_oly.NOC.[i])
+dummy_set<-subset(dummy_set, dummy_set$Medal!=0)
+scatter_1$totMedals[i]<-sum(dummy_set$n)
+
+dummy_set<-subset(pop_gdp_mil_df_oly, pop_gdp_mil_df_oly$NOC==scatter_1$unique.pop_gdp_mil_df_oly.NOC.[i])
+scatter_1$avePop[i]<-mean(dummy_set$Population)
+
+dummy_set<-subset(pop_gdp_mil_df_oly, pop_gdp_mil_df_oly$NOC==scatter_1$unique.pop_gdp_mil_df_oly.NOC.[i])
+scatter_1$aveGDP[i]<-mean(dummy_set$GDP)
+
+dummy_set<-subset(pop_gdp_mil_df_oly, pop_gdp_mil_df_oly$NOC==scatter_1$unique.pop_gdp_mil_df_oly.NOC.[i])
+scatter_1$aveGDPpC[i]<-mean(dummy_set$GDPpC)
+}
+
+eliminateOuts_1 <- scatter_1 %>% filter(!scatter_1$aveGDPpC %in% boxplot.stats(scatter_1$aveGDPpC)$out)
+
+
+par( mfrow = c( 2, 2 ), oma = c( 0, 0, 2, 0 ) )
+
+plot(x=scatter_1$aveGDPpC, y=scatter_1$totMedals, main="Scatter plot w/ outliers", xlab="Ave. GDPpC [USD pp]", ylab="No. medals won", col = 'red')
+
+plot(x=eliminateOuts_1$aveGDPpC, y=eliminateOuts_1$totMedals, main="Scatter plot w/o outliers", xlab="Ave. GDPpC [USD pp]", ylab="No. medals won", col = 'red')
+
+hist(scatter_1$aveGDPpC, main="Histogram w/ outliers", xlab="Ave. GDPC [USD pp]", col = 'green', breaks =100)
+
+hist(eliminateOuts_1$aveGDPpC, main="Histogram w/o outliers", xlab="Ave. GDPpC [USD pp]", col = 'green', breaks =100)
+
+title("GDPpC and medals won plots", outer=TRUE)
+
+pairs.panels(scatter_1) # skips a position, if needed.
+
+scatter_1_stats= summary(scatter_1)
+
+```
+
+The scatter plots show a positive up trend. Also the pairplots show a stronger correlation between average GPD and number of medals won when compared to population and GDPpC. The table below summarizes the numbers
+
+|               | Ave population| Ave GDPpC   |Ave GDP     |
+|---------------|---------------|-------------|------------|
+| Medals won    | 0.33          | 0.26        |0.85        |
+
+### Relationship Between Sports and Competing Country's GDP per Capita (year 2000-present)
+
+Another interesting relationship to explore is the number of medals won in a particular sport and the GDPpC of the competing countries.
+```{r, 3d. Scatter and correlation pair plots final, echo=F}
+scatter_2 <- pop_gdp_mil_df_sprt %>% group_by(Sport, NOC) %>% tally(n)
+scatter_2 <- data.frame(scatter_2)
+
+most_medal_events <- c("Swimming", "Rowing",
+"Ice Hockey", "Hockey", "Gymnastics", "Fencing", "Football", "Canoeing", "Basketball", "Wrestling")
+
+for(i in 1: nrow(scatter_2)) {
+dummy_set<-subset(pop_gdp_mil_df_sprt, pop_gdp_mil_df_sprt$NOC==scatter_2$NOC[i])
+scatter_2$avePop[i]<-mean(unique(dummy_set$Population))
+
+dummy_set<-subset(pop_gdp_mil_df_sprt, pop_gdp_mil_df_sprt$NOC==scatter_2$NOC[i])
+scatter_2$aveGDP[i]<-mean(unique(dummy_set$GDP))
+
+dummy_set<-subset(pop_gdp_mil_df_sprt, pop_gdp_mil_df_sprt$NOC==scatter_2$NOC[i])
+scatter_2$aveGDPpC[i]<-mean(unique(dummy_set$GDPpC))
+}
+
+par( mfrow = c( 1, 3 ), oma = c( 0, 0, 2, 0 ) )
+
+plot(x=subset(scatter_2$aveGDPpC, scatter_2$Sport=="Swimming"), y=subset(scatter_2$n, scatter_2$Sport=="Swimming"), main="Swimming - strong positive correlation", xlab="Average GDP per capita (USD pp)", ylab="Number of medals won", col = 'red')
+
+plot(x=subset(scatter_2$aveGDPpC, scatter_2$Sport=="Boxing"), y=subset(scatter_2$n, scatter_2$Sport=="Boxing"), main="Boxing - neutral relationship", xlab="Average GDP per capita (USD pp)", ylab="Number of medals won", col = 'red')
+
+plot(x=subset(scatter_2$aveGDPpC, scatter_2$Sport=="Canoeing"), y=subset(scatter_2$n, scatter_2$Sport=="Canoeing"), main="Canoeing Swimming - negative correlation", xlab="Average GDP per capita (USD pp)", ylab="Number of medals won", col = 'red')
+
+# ggplot(scatter_2, aes(x= aveGDPpC, y=n, color=Sport))+ geom_point()+
+#   ggtitle("Sport scatter plot") +
+#   xlab("Dose (mg)") + ylab("Teeth length")
+
+# scatter_2b = scatter_2 %>% filter(Sport == "Equestrianism" | Sport == "Rhythmic Gymnastics" |Sport == "Boxing" )
+pairs.panels(scatter_2%>%filter(Sport=="Swimming"), main='Cycling correlation pairplot')
+pairs.panels(scatter_2%>%filter(Sport=="Boxing"), main='Boxing correlation pairplot')
+pairs.panels(scatter_2%>%filter(Sport=="Canoeing"), main='Canoeing correlation pairplot')
+```
+
+The results showed that each sport indeed has a different relationship with a sport when compared with the relavent countries GDPpC. The table below summarize the claculated correlation factor for three sports with positive, near zero and negative correlation.
+
+| Number of medals won for sport: | Ave population| Ave GDP     |Ave GDPpC   |
+|---------------------------------|---------------|-------------|------------|
+|  Swimming                       | 0.21          | 0.83        |0.33        |
+| Boxing                          | 0.09          | 0.18        |0.04        |
+| Canoeing                        | -0.17         | -0.23       |-0.16       |
+
+# Additional Information
+The results of this investigation could be further improved if the data on the percentage of the GDP that gets allocated to the Olympic Committee of each of these countries. Also, the world happiness report, Corruption Perceptions Index (rank), life expectancy and literacy could all be included to develop a more well rounded look into the various factors that my affect an athlete's performance due to the environment they lived in.
