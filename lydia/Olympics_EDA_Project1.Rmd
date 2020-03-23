@@ -273,6 +273,8 @@ adult_athletes$BMI_Category <- as.factor(adult_athletes$BMI_Category)
 
 ```
 
+
+
 ## Height vs BMI
 ```{r hist_height}
 
@@ -305,7 +307,7 @@ bronze_medals <- subset(adult_athletes, Medal == "Bronze")
 
 #histogram of height broken down by gender
 ggplot(adult_athletes, aes(x=BMI, fill=BMI_Category))  + geom_histogram(color="gray7", aes(y=..density..)) + facet_wrap( ~ Sex, ncol=2) + scale_fill_discrete(name="", labels=c("Underweight", "Normal", "Overweight", "Obese")) 
-# + labs(title="BMI of Olympic Athletes \nOver 18 years old", y="Population", x="BMI")
+
 ```
 
 
@@ -313,7 +315,7 @@ ggplot(adult_athletes, aes(x=BMI, fill=BMI_Category))  + geom_histogram(color="g
 ``` {r bmi_mostmedal}
 #boxplot BMI for events with most medal
 most_medal_events <- c("Swimming", "Rowing",
-"Ice Hockey", "Hockey", "Gymnastics", "Fencing", "Football", "Canoeing", "Basketball", "Wrestling")
+"Ice Hockey", "Hockey", "Gymnastics", "Fencing", "Football", "Canoeing", "Basketball", "Wrestling", "Volleyball", "Handball", "Cycling", "Water Polo", "Athletics")
 popular_events <- subset(medal_athletes, Sport %in% most_medal_events)
 
 
