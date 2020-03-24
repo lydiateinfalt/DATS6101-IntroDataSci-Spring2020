@@ -259,13 +259,13 @@ theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 10, hjust = 1), a
 scale_y_continuous(breaks = seq(10, 35,5),limits=c(12, 38))+
 scale_color_manual(labels = c("Underweight", "Normal","Overweight"))
 ```
-The boxplots showing BMI data for top 10 events with the most athletes is easier to read and confirms that for events such as basketball, handball, ice hockey, water polo, and wrestling the male athletes are considered overweight by CDC standards. The lower end of the weight categorization is gymnastics.   
+The boxplot showing BMI data for top 10 events with the most athletes is easier to read and confirms that for events such as basketball, handball, ice hockey, water polo, and wrestling the male athletes are considered overweight by CDC standards. The lower end of the weight categorization is gymnastics.   
 
 
 
 ## BMI of Medal Winning Athletes
 
-We looked at sporting events in order to learn about summer versus winter athletes and found there are more overweight winter athletes. The events played a strong role in determing the BMI group of the athletes. We wanted to find out winning a medal also show common characeristics betewen athletes. Did Gold/Silver/Bronze medalists have more in common with each irrespective of event? 
+We looked at sporting events in order to learn about summer versus winter athletes and found there are more overweight winter athletes. The events played a strong role in determing the BMI classification of the athletes. We wanted to find out winning a medal also show common characeristics between athletes. Did Gold/Silver/Bronze medalists have more in common with each other irrespective of events they competed in? 
 
 The boxplot and histograms showing BMI data for Gold/Silver/Bronze medal winners was relatively normal. 
 
@@ -340,9 +340,10 @@ ggplot(data=popular_events)+
 ```
 
 ## US Olympic Team 
-We've looked at data from the perspective of season, events and medals. Let's focus on US Olympic Team data in table format to see if we can draw any conclusions. 
+We haveve looked at data from the perspective of season, events and medals. Let's focus on US Olympic Team data in table format to see if we can draw any conclusions. 
 
-Gymnasts on the US Olympic team are on the lower spectrum of healthy weight range. Wrestlers are on average second tallest but they have the highest BMI, making them classified as "overweight". 
+Gymnasts on the US Olympic team are on the lower spectrum of healthy weight range. Wrestlers were second shortest but they have the highest BMI, making them classified as overweight. Consistent with the analysis we found in previous sections, US wrestlers and ice hockey players were classified as overweight.
+
 ```{r team_analysis}
 
 
@@ -392,7 +393,7 @@ BMI     | Sex = F  | [`r format(tinterval.bmi.c95.female$conf.int,digits=5)`]
 bmi_ttest <- t.test(BMI~Sex, data=adult_athletes)
 ```
 
-The p-value being small enough to be considered `r format(bmi_ttest$p.value, digits=5)`, hence used a two-sided test we can reject the null hypothesis that the means of BMI being equal between male and female athletes. The plots indicate that male Olympian athletes' BMI to be greater than female Olympian athletes. Female and male
+The p-value 2.2e-16 being small enough to be considered `r format(bmi_ttest$p.value, digits=5)`, hence used a two-sided test we can reject the null hypothesis that the means of BMI values being equal between male and female Olympians The plots indicate that male Olympian athletes' BMI to be greater than female Olympian athletes. Female and male
 athletes BMI: `r format(bmi_ttest$estimate)`
 
 
@@ -408,6 +409,9 @@ anovabmi = aov(BMI ~ Sport, data=popular_events)
 summary(anovabmi)
 ```
 The small p-value would confirm that there are significant differences in BMI averages of athletes in each sports which can be confirmed by the plots from sections 4.3-4.4 
+
+Many Olympic athletes’ builds are more muscular than the average person. They may have BMI that are technically categorized as overweight but it is not necessarily unhealthy. Many BMI charts point out it improperly categorizes athletes and our analysis confirms this.  
+
 
 
 # Geographical Data
