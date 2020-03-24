@@ -158,12 +158,6 @@ adult_athletes <- athletes %>% filter(Age>=20)
   
 #bmi = weight (kg) / [height (m)]^2
 adult_athletes[["BMI"]] <- (adult_athletes$Weight/adult_athletes$Height/adult_athletes$Height) * 10000
-
-
-
-
-
-
 ```
 
 ```{r bmi_02, echo=F}
@@ -269,42 +263,66 @@ The boxplots showing BMI data for top 10 events with the most athletes is easier
 
 
 
-## Gold Medal Athletes BMI
+## BMI of Medal Winning Athletes
 
 We looked at sporting events in order to learn about summer versus winter athletes and found there are more overweight winter athletes. The events played a strong role in determing the BMI group of the athletes. We wanted to find out winning a medal also show common characeristics betewen athletes. Did Gold/Silver/Bronze medalists have more in common with each irrespective of event? 
 
 The boxplot and histograms showing BMI data for Gold/Silver/Bronze medal winners was relatively normal. 
 
+```{r box_hist_medals}
+adult_athletes$Medal <- as.factor(adult_athletes$Medal)
+
+box_medals <- ggplot(adult_athletes, aes(x=Medal, y=BMI, fill=Medal)) + 
+  geom_boxplot() + 
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, size = 12, hjust = 1), 
+        axis.text.y = element_text(vjust = 1, size = 12, hjust = 1), 
+        panel.border = element_rect(colour = "black", fill=NA, size=1)) + 
+  labs(title="Boxplot of \nthe BMI of Olympic Athletes \nFor Medal Won", x="Medal Won By Athelte", y="BMI of Athlete") +
+  scale_fill_manual(values=c("coral3", "goldenrod1", "darkgray")) 
+
+hist_medals <- ggplot(adult_athletes, aes(x=BMI, color=Medal, fill=Medal)) +
+  geom_histogram(aes(y=..density..), binwidth = 1) + 
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 12, hjust = 1),
+        axis.text.y = element_text(vjust = 1, size = 12, hjust = 1), 
+        panel.border = element_rect(colour = "black", fill=NA, size=1)) + 
+  labs(title="Histogram of \nthe BMI of Olympic Athletes \nFor Medal Won", y="Relative Frequency", x="BMI of Athlete") +
+  scale_fill_manual(values=c("coral3", "goldenrod1", "darkgray")) +
+  scale_color_manual(values=c("black", "black", "black")) 
+
+grid.arrange(hist_medals, box_medals, ncol = 2, nrow = 1)
+```
+
+
 ```{r gold_BMI}
-gold_medals <- subset(adult_athletes, Medal == "Gold")
-boxplot(gold_medals$BMI, main="Gold Medal Athletes BMI", ylab="BMI", col='gold')
-
-gbmi <- ggplot(gold_medals, aes(x=BMI)) 
-
-#histogram of BMI broken down by gender
-gbmi + geom_histogram(color="gold", binwidth = 1, aes(y=..density..)) + xlab("BMI") 
+# gold_medals <- subset(adult_athletes, Medal == "Gold")
+# boxplot(gold_medals$BMI, main="Gold Medal Athletes BMI", ylab="BMI", col='gold')
+# 
+# gbmi <- ggplot(gold_medals, aes(x=BMI)) 
+# 
+# #histogram of BMI broken down by gender
+# gbmi + geom_histogram(color="gold", binwidth = 1, aes(y=..density..)) + xlab("BMI") 
 
 ```
 
-## Silver Medal Athletes BMI
 ```{r silver_BMI}
-silver_medals <- subset(adult_athletes, Medal == "Silver")
-boxplot(silver_medals$BMI, main="Silver Medal Athletes BMI", ylab="BMI", col='gray')
-
-sbmi <- ggplot(silver_medals, aes(x=BMI)) 
-
-#histogram of 
-sbmi + geom_histogram(color="blue", binwidth = 1, aes(y=..density..)) + xlab("BMI") 
+# silver_medals <- subset(adult_athletes, Medal == "Silver")
+# boxplot(silver_medals$BMI, main="Silver Medal Athletes BMI", ylab="BMI", col='gray')
+# 
+# sbmi <- ggplot(silver_medals, aes(x=BMI)) 
+# 
+# #histogram of 
+# sbmi + geom_histogram(color="blue", binwidth = 1, aes(y=..density..)) + xlab("BMI") 
 ```
 
-## Bronze Medal Athletes BMI
 ```{r bronze_BMI}
-bronze_medals <- subset(adult_athletes, Medal == "Bronze")
-
-boxplot(bronze_medals$BMI, main="Bronze Medal Athletes BMI", ylab="BMI", col='brown')
-
-#histogram of height broken down by gender
-ggplot(bronze_medals, aes(x=BMI, fill=BMI))  + geom_histogram(color="brown", binwidth = 1, aes(y=..density..)) 
+# bronze_medals <- subset(adult_athletes, Medal == "Bronze")
+# 
+# boxplot(bronze_medals$BMI, main="Bronze Medal Athletes BMI", ylab="BMI", col='brown')
+# 
+# #histogram of height broken down by gender
+# ggplot(bronze_medals, aes(x=BMI, fill=BMI))  + geom_histogram(color="brown", binwidth = 1, aes(y=..density..)) 
 
 ```
 
