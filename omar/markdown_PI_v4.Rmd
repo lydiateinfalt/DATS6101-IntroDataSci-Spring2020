@@ -6,7 +6,7 @@ output:
   rmdformats::readthedown:
     highlight: kate
 ---
-In this part of the report the wealth and population of a country will be explored in order to build a macro-level insight on how an athlete’s environment as indicated by the economic and demographic environment they live in affect their performance in the Olympics.
+The wealth and population of each participating country in the Olympics will be explored in order to build a macro-level insight into how an athlete’s environment may assist or hinder them in winning medals. Here the economic growth and population numbers of each country will be compared in order to ascertain how they may affect the athlete’s ability to win medals.
 
 ```{r setup1, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -32,17 +32,20 @@ opts_chunk$set(echo=FALSE,
 opts_knit$set(width=75)
 ```
 # Datasets
-The olympics dataset was then merged with datasets containing the GDP and population of each country. The datasources were from:
+
+The Olympics dataset obtained previously is merged with datasets containing the Gross Domestic Product (GDP) and population of each country for the years 1960-2019. The datasources were:
 
 Population:
 
 https://knoema.com/UNWPP2019/world-population-prospects-2019
 
+(obtained from worldbank.org)
+
 GDP:
 
 https://data.worldbank.org/indicator/NY.GDP.MKTP.CD
 
-Both datasets had missing data for several past decades and for some of the countries that did not participate in the Olympics. However, for the countries that did participate and still had missing data- these were filled by extrapoilating the average of the years the preceded and followed.
+Both datasets had missing data for several of the past decades and for some of the countries that did not participate in the Olympics. Also, for the recent years some of the countries that did participate still had missing data. These were filled by extrapolating the average of the years the preceded/followed the missing data. Furthermore, gross domestic product per capita (GDPpC) was calculated by dividing the GDP over the population. Categorical variables of the data are converted into 'factor' class.
 
 ```{r, 1. Read and Save Data, include=FALSE}
 #Read data
@@ -160,7 +163,7 @@ sum(is.na(olympics_mil$Medal))
 olympics_mil$Medal[is.na(olympics_mil$Medal)] <- 0
 ```
 
-```{r, 2. Creating final dataframes, echo=F}
+```{r, 2 Creating final dataframes, echo=F}
 # counting medals won by each country
 oly_gpby_NOC_Yr_Mdl <- olympics_mil %>% group_by(NOC, Year, Medal) %>% tally()
 oly_gpby_NOC_Yr_Mdl <- data.frame(oly_gpby_NOC_Yr_Mdl)
@@ -219,7 +222,7 @@ Looking at a few randomly picked countries the following is  obsereved:
 | Jordan | 1 | 109th | 88th |
 | Ukraine | 161 |119th | 35th |
 
-The table does not directly show a clear and distinct relationship between countries winning medals and their GDP/population. Scatter plots, histograms and pair plots are shown below to further investigate the relationship. Outliers using
+The table does not directly show a clear and distinct relationship between countries winning medals and their GDP/population. Scatter plots, histograms and pair plots (pairs.panels show bivariate scatter plots below the diagonal, histograms on the diagonal, and the Pearson correlation above the diagonal) are shown below to further investigate the relationship. To simplify the plots, the average GDP, population and GDP per capita are calculated for years of 2000 until present. Also, the outliers were identified using "boxplot.stats" and a plots are split into "with outliers" and "without outliers" are made.
 
 ### Relationship between Medals Won and Competing Country's GDP per Capita (year 2000-present)
 ```{r, 3c. Scatter histogram and correlation pair plots, incldue=TRUE}
@@ -262,16 +265,17 @@ scatter_1_stats= summary(scatter_1)
 
 ```
 
-The scatter plots show a positive up trend. Also the pairplots show a stronger correlation between average GPD and number of medals won when compared to population and GDPpC. The table below summarizes the numbers
+The scatter plots show a positive uptrend. Also the pairplots show a stronger correlation between average GPD and number of medals won when compared to population and GDPpC. The table below summarizes the numbers
 
-|               | Ave population| Ave GDPpC   |Ave GDP     |
+| Pearsons cf   | Ave population| Ave GDPpC   |Ave GDP     |
 |---------------|---------------|-------------|------------|
 | Medals won    | 0.33          | 0.26        |0.85        |
 
 ### Relationship Between Sports and Competing Country's GDP per Capita (year 2000-present)
 
-Another interesting relationship to explore is the number of medals won in a particular sport and the GDPpC of the competing countries.
-```{r, 3d. Scatter and correlation pair plots final, echo=F}
+Another relationship to explore is the number of medals won in a particular sport and the GDP, population and GDPpC of the competing countries.The plots below show  scatter and pair plots for three sports. Each exhibiting a different relationship to population, GDP and GDPpC. 
+
+```{r, 3d. Scatter and correlation pair plots final, echo=F, warning=FALSE}
 scatter_2 <- pop_gdp_mil_df_sprt %>% group_by(Sport, NOC) %>% tally(n)
 scatter_2 <- data.frame(scatter_2)
 
@@ -307,13 +311,25 @@ pairs.panels(scatter_2%>%filter(Sport=="Boxing"), main='Boxing correlation pairp
 pairs.panels(scatter_2%>%filter(Sport=="Canoeing"), main='Canoeing correlation pairplot')
 ```
 
-The results showed that each sport indeed has a different relationship with a sport when compared with the relavent countries GDPpC. The table below summarize the claculated correlation factor for three sports with positive, near zero and negative correlation.
+The results showed that each sport has a different relationship with when compared with the relevant countries GDPpC. Where swimming has a positive uptrend with GDPpC, boxing is neutral and canoeing has a negative downtrend. The table below summarize the calculated correlation factor for three sports.
 
 | Number of medals won for sport: | Ave population| Ave GDP     |Ave GDPpC   |
 |---------------------------------|---------------|-------------|------------|
 |  Swimming                       | 0.21          | 0.83        |0.33        |
 | Boxing                          | 0.09          | 0.18        |0.04        |
 | Canoeing                        | -0.17         | -0.23       |-0.16       |
+
+The Residuals vs Leverage plots below show that none of the datapoints are highly influential against a regression line.
+
+```{r, cooks distance}
+swimming <- scatter_2 %>% filter(Sport=="Swimming")
+boxing <- scatter_2 %>% filter(Sport=="Boxing")
+canoeing <- scatter_2 %>% filter(Sport=="Canoeing")
+
+plot(lm(n ~ aveGDPpC, data=swimming), qqline=FALSE)
+plot(lm(n ~ aveGDPpC, data=boxing), qqline=FALSE)
+plot(lm(n ~ aveGDPpC, data=canoeing), qqline=FALSE)
+```
 
 # Additional Information
 The results of this investigation could be further improved if the data on the percentage of the GDP that gets allocated to the Olympic Committee of each of these countries. Also, the world happiness report, Corruption Perceptions Index (rank), life expectancy and literacy could all be included to develop a more well rounded look into the various factors that my affect an athlete's performance due to the environment they lived in.
