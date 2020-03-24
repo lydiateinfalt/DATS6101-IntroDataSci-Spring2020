@@ -326,10 +326,14 @@ swimming <- scatter_2 %>% filter(Sport=="Swimming")
 boxing <- scatter_2 %>% filter(Sport=="Boxing")
 canoeing <- scatter_2 %>% filter(Sport=="Canoeing")
 
-plot(lm(n ~ aveGDPpC, data=swimming), qqline=FALSE)
-plot(lm(n ~ aveGDPpC, data=boxing), qqline=FALSE)
-plot(lm(n ~ aveGDPpC, data=canoeing), qqline=FALSE)
+plot(lm(n ~ aveGDPpC, data=swimming))
+plot(lm(n ~ aveGDPpC, data=boxing))
+plot(lm(n ~ aveGDPpC, data=canoeing))
+# cooks.distance(lm(n ~ aveGDPpC, data=swimming))
+# cooks.distance(lm(n ~ aveGDPpC, data=boxing))
+# cooks.distance(lm(n ~ aveGDPpC, data=canoeing))
 ```
 
+
 # Additional Information
-The results of this investigation could be further improved if the data on the percentage of the GDP that gets allocated to the Olympic Committee of each of these countries. Also, the world happiness report, Corruption Perceptions Index (rank), life expectancy and literacy could all be included to develop a more well rounded look into the various factors that my affect an athlete's performance due to the environment they lived in.
+The results of this investigation could be further improved if the data on the percentage of the GDP that gets allocated to the Olympic Committee of each of these countries. Also, the world happiness report, Corruption Perceptions Index, life expectancy and literacy index could all be included to develop a well rounded look into the various factors that my affect an athlete's performance due to the environment they lived in.
