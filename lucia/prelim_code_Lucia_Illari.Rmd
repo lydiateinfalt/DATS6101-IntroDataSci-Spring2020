@@ -30,15 +30,11 @@ Loading necessary packages.
 loadPkg("readr")
 loadPkg("tidyr")
 loadPkg("ggplot2")
-#loadPkg("viridis")
 loadPkg("gridExtra")
 loadPkg("corrplot")
 loadPkg("ggcorrplot")
 loadPkg("GGally")
 loadPkg("PerformanceAnalytics")
-#loadPkg("devtools")
-#loadPkg("tm")
-#loadPkg("SnowballC")
 loadPkg("wordcloud")
 loadPkg("RColorBrewer")
 ```
@@ -106,6 +102,10 @@ bp1 <- ggplot(athlete_events, aes(x=Medal), color = Team) + geom_bar(aes(y=(..co
 bp2 <- ggplot(medalDat, aes(x=Medal), color = Team) + geom_bar(aes(y=(..count..)/sum(..count..)))
 
 grid.arrange(bp1, bp2, nrow = 1)
+```
+
+```{r}
+str(athlete_events)
 ```
 
 Integer encoding data so that it can be include in checking correlation:
@@ -190,6 +190,10 @@ US_cities_data100 <- US_cities_data100[seq(dim(US_cities_data100)[1],1),]
 US_cities_data100
 ```
 
+```{r google_key, echo=F}
+token <- read_csv("token.csv")
+```
+
 
 ```{r worldmap, results = "markup"}
 loadPkg("tidyverse")
@@ -209,7 +213,7 @@ map.world <- map_data("world")
 map.world_joined <- left_join(map.world, first.inst.NOC, by = c('region' = 'country'))
 map.world_joined <- map.world_joined %>% mutate(fill_flg = ifelse(is.na(rank),F,T))
 
-register_google(key = "")#has bee removed when uploaded for safety reasons
+register_google(key = token)
 df.country_points <- data.frame(country = c("Singapore","luxembourg"),stringsAsFactors = F)
 geocode.country_points <- geocode(df.country_points$country)
 df.country_points <- cbind(df.country_points,geocode.country_points)
@@ -219,9 +223,8 @@ w <- w + geom_polygon( data=map.world_joined, aes(x=long, y=lat, group=group), c
 
 w <- w + geom_polygon( data=map.world_joined, aes(x=long, y=lat, group=group, fill = rank), color="black") 
 
-pdf("global_map.pdf",width=25,height=15,pointsize=50)
-print(w <- w + scale_fill_continuous(name="counts", low = "goldenrod1", high = "firebrick4",limits = c(0,19400), breaks=c(0, 970, 1940, 2910, 3880, 4850, 5820, 6790, 7760, 8730, 9700, 10670, 11640, 12610, 13580, 14550, 15520, 16490, 17460, 18430, 19400), na.value = "white") + labs(title="Heat map of olympic athletes from around the globe") + theme_gray(base_size=25))
-dev.off() 
+w <- w + scale_fill_continuous(name="counts", low = "goldenrod1", high = "firebrick4",limits = c(0,19400), breaks=c(0, 970, 1940, 2910, 3880, 4850, 5820, 6790, 7760, 8730, 9700, 10670, 11640, 12610, 13580, 14550, 15520, 16490, 17460, 18430, 19400), na.value = "white") + labs(title="Heat map of olympic athletes from around the globe") + theme_gray()
+w
 ```
 
 ```{r}
@@ -259,23 +262,20 @@ last.names.count <- first.instance %>% count(Last.Name)
 lastname.edit <- subset(last.names.count, !(last.names.count$Last.Name == "Jr.") & !(last.names.count$Last.Name == "Sr.") & !(last.names.count$Last.Name == "III"))
 ```
 
+```{r}
+first.names.count[which.max(first.names.count$n),]$First.Name
+lastname.edit[which.max(lastname.edit$n),]$Last.Name
+```
+
 
 ```{r wordcloudF, results = "markup"}
-pdf("wc1.pdf")
-print(wordcloud(words = first.names.count$First.Name, freq = first.names.count$n, min.freq = 1, max.words=100, random.order=FALSE, rot.per=0.35, colors=brewer.pal(8, "Paired")))
-dev.off()
-pdf("wc2.pdf")
-print(wordcloud(words = first.names.countF$First.Name, freq = first.names.countF$n, min.freq = 1, max.words=100, random.order=FALSE, rot.per=0.35, colors=brewer.pal(8, "Paired")))
-dev.off()
-pdf("wc3.pdf")
-print(wordcloud(words = first.names.countM$First.Name, freq = first.names.countM$n, min.freq = 1, max.words=100, random.order=FALSE, rot.per=0.35, colors=brewer.pal(8, "Paired")))
-dev.off()
+wordcloud(words = first.names.count$First.Name, freq = first.names.count$n, min.freq = 1, max.words=100, random.order=FALSE, rot.per=0.35, colors=brewer.pal(8, "Paired"))
+wordcloud(words = first.names.countF$First.Name, freq = first.names.countF$n, min.freq = 1, max.words=100, random.order=FALSE, rot.per=0.35, colors=brewer.pal(8, "Paired"))
+wordcloud(words = first.names.countM$First.Name, freq = first.names.countM$n, min.freq = 1, max.words=100, random.order=FALSE, rot.per=0.35, colors=brewer.pal(8, "Paired"))
 ```
 
 ```{r wordcloudL, results = "markup"}
-pdf("wc4.pdf")
-print(wordcloud(words = lastname.edit$Last.Name, freq = lastname.edit$n, min.freq = 1, max.words=100, random.order=FALSE, rot.per=0.35, colors=brewer.pal(8, "Paired")))
-dev.off()
+wordcloud(words = lastname.edit$Last.Name, freq = lastname.edit$n, min.freq = 1, max.words=100, random.order=FALSE, rot.per=0.35, colors=brewer.pal(8, "Paired"))
 ```
 
 
@@ -334,7 +334,6 @@ outlierKD2 <- function(df, var, rm=FALSE, title, colVal) {
     len <- (max(var_name)-min(var_name))
     na1 <- sum(is.na(var_name))
     m1 <- mean(var_name, na.rm = T)
-    print(lillie.test(var_name))
     par(mfrow=c(2, 3), oma=c(0,0,3,0))
     boxplot(var_name, main=paste("With outliers\nfor", title), ylab = title, col = colVal, horizontal = TRUE)
     hW<-hist(var_name, main=paste("With outliers\nfor", title), xlab=title, ylab="frequency", col = colVal, density = 10)
@@ -348,7 +347,6 @@ outlierKD2 <- function(df, var, rm=FALSE, title, colVal) {
     mo <- mean(outlier)
     var_name <- ifelse(var_name %in% outlier, NA, var_name)
     len <- (max(var_name,na.rm = TRUE)-min(var_name,na.rm = TRUE))
-    print(lillie.test(var_name))
     boxplot(var_name, main=paste("Without outliers\nfor", title), ylab = title, col = colVal, horizontal = TRUE)
     hW<-hist(var_name, main=paste("Without outliers\nfor", title), xlab=title, ylab="frequency", col = colVal, density = 10)
     xfitW<-seq(min(var_name,na.rm = TRUE),max(var_name,na.rm = TRUE),length=len)
@@ -357,7 +355,25 @@ outlierKD2 <- function(df, var, rm=FALSE, title, colVal) {
     lines(xfitW, yfitW, col="black", lwd=2)
     qqnorm(var_name, main=paste("Q-Q plot without outliers\nfor", title), col = colVal)
     qqline(var_name)
-    title(paste("Outlier Check for ", title), outer=TRUE)
+    title(paste("Outlier Check for", title), outer=TRUE)
+    na2 <- sum(is.na(var_name))
+    m2 <- mean(var_name, na.rm = T)
+}
+
+outlier_nortest <- function(df, var, rm=FALSE, title) { 
+    dt = df
+    var_name <- eval(substitute(var),eval(dt))
+    len <- (max(var_name)-min(var_name))
+    na1 <- sum(is.na(var_name))
+    m1 <- mean(var_name, na.rm = T)
+    cat(paste("The results of the Lilliefore test for",title,"with outliers is:\n\n"))
+    print(lillie.test(var_name))
+    outlier <- boxplot.stats(var_name)$out
+    mo <- mean(outlier)
+    var_name <- ifelse(var_name %in% outlier, NA, var_name)
+    len <- (max(var_name,na.rm = TRUE)-min(var_name,na.rm = TRUE))
+    cat(paste("The results of the Lilliefore test for",title,"without outliers is:\n\n"))
+    print(lillie.test(var_name))
     na2 <- sum(is.na(var_name))
     m2 <- mean(var_name, na.rm = T)
 }
@@ -365,8 +381,13 @@ outlierKD2 <- function(df, var, rm=FALSE, title, colVal) {
 
 ```{r outlier_stand, results = "markup"}
 outlierKD2(weightDat, Weight, TRUE, "weight (kg)", "red")
+outlier_nortest(weightDat, Weight, TRUE, "weight data")
+
 outlierKD2(heightDat, Height, TRUE, "height (cm)", "blue")
+outlier_nortest(heightDat, Height, TRUE, "height data")
+
 outlierKD2(ageDat, Age, TRUE, "age (years)", "green")
+outlier_nortest(ageDat, Age, TRUE, "age data")
 ```
 
 To run this, you need to comment out the Lilliefore test part:
