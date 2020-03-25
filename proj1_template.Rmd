@@ -180,19 +180,43 @@ adult_athletes$BMI_Category <- as.factor(adult_athletes$BMI_Category)
 ```{r hist_height}
 
 #boxplot of Height over BMI Weight Status
-ggplot(data=adult_athletes, aes(x=BMI_Category, y=Height, fill=Sex)) + geom_boxplot() + theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 12, hjust = 1), axis.text.y = element_text(vjust = 1, size = 12, hjust = 1)) + labs(title="Boxplot of Height Over Category", x="BMI") + scale_x_discrete(labels=c("Underweight", "Healthy", "Overweight", "Obese"))  + ylab("Height (cm)")
+ggplot(data=adult_athletes, aes(x=BMI_Category, y=Height, fill=Sex)) + 
+  geom_boxplot() + 
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, size = 12, hjust = 1), 
+        axis.text.y = element_text(vjust = 1, size = 12, hjust = 1),
+        panel.border = element_rect(colour = "black", fill=NA, size=1)) + 
+  labs(title="Boxplot of Height Over Category", x="BMI") + 
+  scale_x_discrete(labels=c("Underweight", "Healthy", "Overweight", "Obese"))  + 
+  ylab("Height (cm)")
 ```
 The above chart comparing height against categories show averages between female and male athletes are not equal across the board. It does not matter if the Olympian is underweight or obese, the male athletes are on average taller than the female athletes. For healthy and overweight athletes, there are more outliers in the data than the underweight and obese categories.
 ```{r weight_hist}
 
 #boxplot of Weight over BMI
-ggplot(data=adult_athletes, aes(x=BMI_Category, y=Weight, fill=Sex)) + geom_boxplot() + theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 12, hjust = 1), axis.text.y = element_text(vjust = 1, size = 12, hjust = 1)) + labs(title="Boxplot of Weight Over Category", x="BMI") + scale_x_discrete(labels=c("Underweight", "Healthy", "Overweight", "Obese")) + ylab("Weight (kg")
+ggplot(data=adult_athletes, aes(x=BMI_Category, y=Weight, fill=Sex)) + 
+  geom_boxplot() +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, size = 12, hjust = 1), 
+        axis.text.y = element_text(vjust = 1, size = 12, hjust = 1),
+        panel.border = element_rect(colour = "black", fill=NA, size=1)) + 
+  labs(title="Boxplot of Weight Over Category", x="BMI") + 
+  scale_x_discrete(labels=c("Underweight", "Healthy", "Overweight", "Obese")) + 
+  ylab("Weight (kg")
 ```
 This chart shows that average weight increases from underweight to obese.  This is what we would expect. There is very little variability in weight for underweight Olympians and much greater variablity in the weight for obese athletes. As we found with height, the male athletes on average weigh more than the female athletes.
 
 ```{r age_hist}
 #boxplot of Age over BMI
-ggplot(data=adult_athletes, aes(x=BMI_Category, y=Age, fill=Sex)) + geom_boxplot() + theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 12, hjust = 1), axis.text.y = element_text(vjust = 1, size = 12, hjust = 1)) + labs(title="Boxplot of Age Over Category", x="BMI") + scale_x_discrete(labels=c("Underweight", "Healthy", "Overweight", "Obese")) 
+ggplot(data=adult_athletes, aes(x=BMI_Category, y=Age, fill=Sex)) + 
+  geom_boxplot() + 
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, size = 12, hjust = 1), 
+        axis.text.y = element_text(vjust = 1, size = 12, hjust = 1),
+        panel.border = element_rect(colour = "black", fill=NA, size=1)) + 
+  labs(title="Boxplot of Age Over Category", x="BMI") + 
+  scale_x_discrete(labels=c("Underweight", "Healthy", "Overweight", "Obese")) + 
+  ylab("Age") 
 ```
 
 Average ages are close irrespective of weight category or gender. Notable are the number of outliers in age data for healthy and overweight Olympians.
@@ -208,8 +232,17 @@ bronze_medals <- subset(adult_athletes, Medal == "Bronze")
 
 
 #histogram of height broken down by gender
-ggplot(adult_athletes, aes(x=BMI, fill=BMI_Category))  + geom_histogram(color="gray7", aes(y=..density..)) + facet_wrap( ~ Sex, ncol=2) + ylab("Relative Frequency") +
-scale_fill_discrete(name="", labels=c("Underweight", "Healthy", "Overweight", "Obese")) 
+ggplot(adult_athletes, aes(x=BMI, fill=BMI_Category))  + 
+  geom_histogram(color="gray7", aes(y=..density..), binwidth = 1) + 
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 20, vjust = 1, size = 12, hjust = 1), 
+        axis.text.y = element_text(vjust = 1, size = 12, hjust = 1),
+        panel.border = element_rect(color = "black", fill=NA, size=1),
+        strip.text = element_text(color="black", size=18)) +
+  facet_wrap( ~ Sex, ncol=2) + 
+  ylab("Relative Frequency") +
+  scale_fill_discrete(name="", labels=c("Underweight", "Healthy", "Overweight", 
+                                        "Obese")) 
 
 ```
 The histogram of relative frequency versus BMI of female and male Olympians clearly show that not all athletes have healthy weight according to the CDC.
@@ -221,13 +254,18 @@ We wondered about the differences between Olympians who competed in summer versu
 ```{r BMI_Summer_Athletes}
 #boxplot BMI for Summer athletes
 summer_events <- subset(medal_athletes, Season == "Summer")
-ggplot(data=summer_events, aes(x=Sport, y=BMI, fill=Sex)) + geom_boxplot() +
-geom_hline(yintercept=c(18.5), linetype="dashed", color="green")+
-geom_hline(yintercept=c(25), linetype="dashed", color="blue")+
-geom_hline(yintercept=c(30), linetype="dashed", color="red")+
-theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 9, hjust = 1), axis.text.y = element_text(vjust = 1, size = 9))+
-scale_y_continuous(breaks = seq(10, 35,5),limits=c(12, 38))+
-scale_color_manual(labels = c("Underweight", "Normal","Overweight"))
+
+ggplot(data=summer_events, aes(x=Sport, y=BMI, fill=Sex)) + 
+  geom_boxplot() +
+  geom_hline(yintercept=c(18.5), linetype="dashed", color="green") +
+  geom_hline(yintercept=c(25), linetype="dashed", color="blue") +
+  geom_hline(yintercept=c(30), linetype="dashed", color="red") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 9, hjust = 1),
+        axis.text.y = element_text(vjust = 1, size = 9),
+        panel.border = element_rect(color = "black", fill=NA, size=1)) +
+  scale_y_continuous(breaks = seq(10, 35,5),limits=c(12, 38)) +
+  scale_color_manual(labels = c("Underweight", "Normal","Overweight"))
 ```
 In the summer events, the boxplots show that athletes in the overweight category competed in basketball, boxing, football, ice hockey, rugby, shooting, tug-of-war, weightlifting, and wrestling. There was great variability in BMI for weightlifters, at the top -- they were considered obese. In In the underweight category were female rhythmic gymnasts and gymnasts.
 
@@ -235,11 +273,17 @@ In the summer events, the boxplots show that athletes in the overweight category
 ```{r BMI_Winter_athletes}
 #boxplot BMI for Winter athletes
 Winter_events <- subset(medal_athletes, Season == "Winter")
-ggplot(data=Winter_events, aes(x=Sport, y=BMI, fill=Sex)) + geom_boxplot() + 
-geom_hline(yintercept=c(18.5), linetype="dashed", color="green")+
-geom_hline(yintercept=c(25), linetype="dashed", color="blue")+
-geom_hline(yintercept=c(30), linetype="dashed", color="red")+
-  theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 9, hjust = 1), axis.text.y = element_text(vjust = 1, size = 9)) +scale_y_continuous(breaks = seq(10, 35,5),limits=c(12, 38))
+
+ggplot(data=Winter_events, aes(x=Sport, y=BMI, fill=Sex)) + 
+  geom_boxplot() + 
+  geom_hline(yintercept=c(18.5), linetype="dashed", color="green") +
+  geom_hline(yintercept=c(25), linetype="dashed", color="blue") +
+  geom_hline(yintercept=c(30), linetype="dashed", color="red") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 9, hjust = 1),
+        axis.text.y = element_text(vjust = 1, size = 9),
+        panel.border = element_rect(color = "black", fill=NA, size=1)) +
+  scale_y_continuous(breaks = seq(10, 35,5),limits=c(12, 38))
 ```
 In the winter events, the boxplots showed male athletes in the overweight category competed in alpine sking, bobsleigh, curling, freestyle skiing, ice hockey, luge, and snowboarding. The female figure skaters were in the underweight category. Given that there are not that many events in the winter Olympics but athletes in half of the events are upper end of healthy weight to being overweight, it seems that more Winter Olympians are in the upper end of normal to being overweight. The nature of winter events requiring athletes to be bulkier and bigger in order to be competitive.
 
@@ -251,13 +295,17 @@ most_medal_events <- c("Swimming", "Rowing",
 popular_events <- subset(medal_athletes, Sport %in% most_medal_events)
 
 
-ggplot(data=popular_events, aes(x=Sport, y=BMI, fill=Sex)) + geom_boxplot() +
-geom_hline(yintercept=c(18.5), linetype="dashed", color="green")+
-geom_hline(yintercept=c(25), linetype="dashed", color="blue")+
-geom_hline(yintercept=c(30), linetype="dashed", color="red")+
-theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 10, hjust = 1), axis.text.y = element_text(vjust = 1, size = 5)) + 
-scale_y_continuous(breaks = seq(10, 35,5),limits=c(12, 38))+
-scale_color_manual(labels = c("Underweight", "Normal","Overweight"))
+ggplot(data=popular_events, aes(x=Sport, y=BMI, fill=Sex)) + 
+  geom_boxplot() +
+  geom_hline(yintercept=c(18.5), linetype="dashed", color="green") +
+  geom_hline(yintercept=c(25), linetype="dashed", color="blue") +
+  geom_hline(yintercept=c(30), linetype="dashed", color="red") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 9, hjust = 1),
+        axis.text.y = element_text(vjust = 1, size = 9),
+        panel.border = element_rect(color = "black", fill=NA, size=1)) + 
+  scale_y_continuous(breaks = seq(10, 35,5),limits=c(12, 38)) +
+  scale_color_manual(labels = c("Underweight", "Normal","Overweight"))
 ```
 The boxplot showing BMI data for top 10 events with the most athletes is easier to read and confirms that for events such as basketball, handball, ice hockey, water polo, and wrestling the male athletes are considered overweight by CDC standards. The lower end of the weight categorization is gymnastics.   
 
@@ -331,9 +379,14 @@ We created a scatterplot of height and weight of athletes that competed in the t
 
 
 
-ggplot(data=popular_events)+
-  geom_point(mapping = aes(x=Weight, y=Height, color=Sport))+
-  xlab("Weight (kg)") + ylab("Height (cm)") +
+ggplot(data=popular_events) +
+  geom_point(mapping = aes(x=Weight, y=Height, color=Sport)) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 9, hjust = 1),
+        axis.text.y = element_text(vjust = 1, size = 9),
+        panel.border = element_rect(color = "black", fill=NA, size=1)) +
+  xlab("Weight (kg)") + 
+  ylab("Height (cm)") +
   ggtitle("Scatter Plot of Athletes of Popular Events Height vs Weight")
 
 
