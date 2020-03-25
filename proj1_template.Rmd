@@ -31,10 +31,23 @@ opts_knit$set(width=75)
 loadPkg = function(x) { if (!require(x,character.only=T, quietly =T)) { install.packages(x,dep=T,repos="http://cran.us.r-project.org"); if(!require(x,character.only=T)) stop("Package not found") } }
 ```
 
+```{r func_unload, include=F}
+detach_package <- function(pkg, character.only = FALSE)
+{
+  if(!character.only)
+  {
+    pkg <- deparse(substitute(pkg))
+  }
+  search_item <- paste("package", pkg, sep = ":")
+  while(search_item %in% search())
+  {
+    detach(search_item, unload = TRUE, character.only = TRUE)
+  }
+}
+```
+
+
 ```{r libraries}
-#library(ggplot2)
-#require(gridExtra)
-#library(kableExtra)
 loadPkg("ggplot2")
 loadPkg("gridExtra")
 loadPkg("kableExtra")
@@ -57,9 +70,9 @@ The report is organized as follows:
 2. Description of Data
 3. What are the body types of Olympic Athletes? (BMI Data)
 4. Where do Olympians come from? (Geographical Data)
-5. GDP Data Goes Here?
+5. Does a country's GDP and Population affect the number of medals that its athletes win? (GDP Data)
 6. Are there any common names among Olympians? (Name Data)
-7. Have there been any body trends among Olympians over the years? (Trends Over Time)
+7. Have there been any body (weight and height) trends among Olympians over the years? (Trends Over Time)
 8. Are Olympic Athletes a certain age? (Age Data)
 9. Discussion And Conclusion
 
@@ -376,10 +389,7 @@ grid.arrange(hist_medals, box_medals, ncol = 2, nrow = 1)
 
 We created a scatterplot of height and weight of athletes that competed in the top 10 events to discern groupings based on event but did not find any conclusive visual evidence.
 ```{r scatter_medal}
-
-
-
-ggplot(data=popular_events) +
+ggplot(data=popular_events, aes(x=Weight, y=Height, color=Sport)) +
   geom_point(mapping = aes(x=Weight, y=Height, color=Sport)) +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 9, hjust = 1),
@@ -389,8 +399,39 @@ ggplot(data=popular_events) +
   ylab("Height (cm)") +
   ggtitle("Scatter Plot of Athletes of Popular Events Height vs Weight")
 
-
 ```
+
+```{r CI_ellipse}
+# ggplot(data=popular_events, aes(x=Weight, y=Height, color=Sport)) +
+#   geom_point(mapping = aes(x=Weight, y=Height, color=Sport)) +
+#   theme_minimal() +
+#   theme(axis.text.x = element_text(angle = 90, vjust = 1, size = 9, hjust = 1),
+#         axis.text.y = element_text(vjust = 1, size = 9),
+#         panel.border = element_rect(color = "black", fill=NA, size=1)) +
+#   xlab("Weight (kg)") + 
+#   ylab("Height (cm)") +
+#   ggtitle("Scatter Plot of Athletes of Popular Events Height vs Weight") +
+#   stat_ellipse(type = "norm", linetype = 2)
+# 
+# loadPkg("car")
+# 
+# par(mfrow=c(1, 2))
+# dataEllipse(popular_events$Weight, popular_events$Height, 
+#             main="With outliers", levels=c(0.68, 0.95, 0.99), xlab="Weight (kg)", 
+#             ylab="Height (cm)")
+# 
+# outlier_Weight <- boxplot.stats(popular_events$Weight)$out
+# outlier_Weight
+# length(outlier_Weight)
+# outlier_Height <- boxplot.stats(popular_events$Height)$out
+# outlier_Height
+# length(outlier_Height)
+# mo_Weight <- mean(outlier_Weight)
+# mo_Height <- mean(outlier_Height)
+#      
+# detach_package("car", TRUE)
+```
+
 
 ## US Olympic Team 
 We haveve looked at data from the perspective of season, events and medals. Let's focus on US Olympic Team data in table format to see if we can draw any conclusions. 
@@ -474,6 +515,8 @@ Many Olympic athletes’ builds are more muscular than the average person. They 
 # Name Data
 
 # Trends Over Time
+
+## Trends in Specific Sports
 
 We wanted to see the changes in Olympians for the top 10 events (in terms of how many Olympians were recorded for the sport) over the years. Below are the top 10 events:  
 
@@ -895,6 +938,8 @@ grid.arrange(women_weight_plot, men_weight_plot, women_height_plot, men_height_p
 
 It seems that in general events like rowing or basketball have been trending towards larger and larger athletes (in terms of both weight and height) whereas events like Gymnastics skews in the completely opposite direction, favoring smaller and smaller athletes. The Wrestling event data is a bit misleading---we have taken the averages per Olympic game year, and if we were to look at the Wrestling data by itself we would see clear categories for weight and height. This is due to the nature of the sport, and its weight classes. This is why in the men's data it looks like the data for the Wrestling is a constant straight line. It appears that way because there the following weight classes at the Olympics: Freestyle weight classes (12): Men’s 57kg, Men’s 65kg, Men’s 74kg, Men’s 86kg, Men’s 97kg, Men’s 125kg, Women’s 50kg, Women’s 53kg, Women’s 57kg, Women’s 62kg, Women’s 68kg, Women’s 76kg; and then Greco-Roman weight classes (6): Men’s 60kg, Men’s 67kg, Men’s 77kg, Men’s 87kg, Men’s 97kg, Men’s 130kg. 
 
+## Changes in Weights and Heights Over The Decades
+
 What we can also use this over time data for is to see trends during "decades". We can overlay the data for the decades ontop of each other on a histogram, or we could use boxplots where we've made a decade into a "rank"/factorial data type. 
 
 ```{r decades}
@@ -964,7 +1009,7 @@ athlete_events_noNA <- cbind(athlete_events_noNA, df)
 athlete_events_noNA$Decade <- as.factor(athlete_events_noNA$Decade)
 ```
 
-Now that I've created a new comlumn `Decade` in the dataframe, I can make histograms or boxplots of the `Weight` and `Height` and group by `Decade`. 
+Now that we've created a new comlumn `Decade` in the dataframe, we can make histograms or boxplots of the `Weight` and `Height` and group by `Decade`. 
 
 ```{r plot_by_decade}
 #separate data by decade
@@ -1050,6 +1095,8 @@ grid.arrange(hist_decade_height, boxplot_decade_height, ncol = 2, nrow = 1)
 #grid.arrange(hist_decade_weight2, hist_decade_height2, ncol = 2, nrow = 1)
 #grid.arrange(qqplot_decade_weight, qqplot_decade_height, ncol = 2, nrow = 1)
 ```
+
+## ANOVA Testing on the Trends Over the Decades
 
 We have the boxplots, but we can use ANOVA to test the difference between the means in the weight and height data over the decades. ANOVA testing we have that:
 
@@ -1234,3 +1281,24 @@ When we look at the medal-winning athletes during the Summer Games by gender we 
 
 
 # Discussion & Conclusion
+
+## Summary of the BMI of olympic athletes
+
+## Summary of the geographical data of olympic athletes
+
+## Summary of the effect of a country's GDP and Population on the number of medals won by that country's athletes 
+
+## Summary of the most common names among olympic athletes
+
+## Summary of changes over time in weights and heights of olympic athletes
+
+To see the changes in the athletes' weights and heights over time we narrowed our analysis to just the "top 10" events. A "top" event was simply defined by the total number of athletes that had participated in said event in total, which meant that although we were reducing the number of data analyzed we still had a large amount of athletes still left to look at. The category "Athletics", although the most "popular" in terms of it being the event with the single highest number of participants, was excluded due to the remarkable diversity of subcategories included in that one single event (which includes track and field, road running, cross country running, and race walking). This diversity of subcategories made it difficult to determine how the average athlete in said event looks, unlike the other events which are single sports such as basketball or swimming. 
+
+It seems that over time the weights and heights of Olympic athletes has been moving towards extremes. We can see how, for example, the Olympians in gymnastics have become much lighter and much shorter, while the opposite is true for events like basketball, rowing, and swimming. We see that being an Olympic athlete very much means that your body type is an outlier, and the kind of outlier it is (very light or heavy, very short or tall) is influenced by the type of event that the athlete is competing in. We can see just how the number of outliers in the weights and heights of the athletes increases as we go through the decades, where the most recent decade of Olympic games shows the most outliers in both weight and height data than any other decade. 
+
+## Summary of changes over time in ages of olympic athletes
+
+While the weights and heights of the athletes seem to be affected by the event in which they particpate (or, rather, that athletes with extreme body types perhaps go to the Olympics more than individuals with "average" body types), the ages of the Olympic athletes seems to be affected by global events---which makes sense, considering that the Olympics are, in and of themselves, global events. The overall average age of all Olympians, even amongst the medals winners, is roughly 26 years old.  
+
+During the two World Wars the average ages of the athletes are higher than other periods, presumably because the younger athletes we fighting in the wars. A good three quarters of the Olympic athletes have been men, and so it makes sense to see this shift in the mean age when we suddenly lose a good majority of the young male athletes to war. After WW2 we see a decrease in the average age of Olympians, indicating that we have a new group of young atheletes participating in the games. Since roughly the 1980s, there has been a slow increase in the average ages of Olympians. On average female athletes have fairly consistently been younger than their male counterparts, and the Olympians participating in the Winter games are younger than the Olympians participating in the Summer games. 
+
