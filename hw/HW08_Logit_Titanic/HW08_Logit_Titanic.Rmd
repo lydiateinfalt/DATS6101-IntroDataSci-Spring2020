@@ -532,13 +532,23 @@ Receiver-Operator-Characteristic (ROC) curve and Area-Under-Curve (AUC) measures
 
 ```{r roc_auc_age_pclass}
 loadPkg(pROC) # receiver operating characteristic curve, gives the diagnostic ability of a binary classifier system as its discrimination threshold is varied. The curve is on sensitivity/recall/true-positive-rate vs false_alarm/false-positive-rate/fall-out.
-loadPkg(car)
-prob_age_pclass <- predict(admitLogitHoslem_age_pclass, type = c("response"))
+prob_age_pclass <- predict(surviveLogit_age_pclass, type = c("response"))
 titanic_orig$prob <- prob_age_pclass
 h_age_pclass <- roc(survived~prob, data=titanic_orig)
 auc(h_age_pclass) # area-under-curve prefer 0.8 or higher.
 plot(h_age_pclass)
 ```
+
+We have here the area-under-curve of `r auc(h_age_pclass)`, which is less than 0.8. This test also agrees with the Hosmer and Lemeshow test that the model is not considered a good fit. 
+
+McFadden is another evaluation tool we can use on logit regressions. This is part of what is called pseudo-R-squared values for evaluation tests. We can calculate the value directly from its definition if we so choose to.
+
+```{r McFadden_direct_age_pclass}
+admitNullLogit_age_pclass <- glm(survived ~ 1, data = titanic_orig, family = "binomial")
+mcFadden_age_pclass = 1 - logLik(surviveLogit_age_pclass)/logLik(admitNullLogit_age_pclass)
+```
+
+With the McFadden value of `r mcFadden_age_pclass`, which is analgous to the coefficient of determination $R^2$, only about 14% of the variations in y is explained by the explanatory variables in the model. 
 
 
 ### Question 8  
@@ -564,7 +574,6 @@ unloadPkg(gridExtra)
 unloadPkg(plyr)
 unloadPkg(ResourceSelection) 
 unloadPkg(pROC) 
-unloadPkg(car) 
 ```
 
 
