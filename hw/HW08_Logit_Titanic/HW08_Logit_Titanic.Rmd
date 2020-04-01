@@ -1,0 +1,571 @@
+---
+title: "Intro to DS - HW08 Logit Regression"
+author: "Izzy Illari"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    code_folding: hide
+    # number_sections: true
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+---
+
+```{r setup, include=FALSE}
+# some of common options (and the defaults) are: 
+# include=T, eval=T, echo=T, results='hide'/'asis',..., collapse=F, warning=T, message=T, error=T, cache=T, fig.width=6, fig.height=4, fig.dim=c(6,4) #inches, fig.align='left'/'center','right', 
+# knitr::opts_chunk$set(warning = F, results = 'markup', message = F)
+knitr::opts_chunk$set(warning = F, results = T, message = F)
+# knitr::opts_chunk$set(include = F)
+# knitr::opts_chunk$set(echo = TRUE)
+options(scientific=T, digits = 3) 
+# options(scipen=9, digits = 3) 
+# ‘scipen’: integer. A penalty to be applied when deciding to print numeric values in fixed or exponential notation.  Positive values bias towards fixed and negative towards scientific notation: fixed notation will be preferred unless it is more than ‘scipen’ digits wider.
+# use scipen=999 to prevent scientific notation at all times
+```
+
+```{r basic, include=F}
+# use this function to conveniently load libraries and work smoothly with knitting
+# can add quietly=T option to the require() function
+loadPkg = function(pkg, character.only = FALSE) { 
+  if (!character.only) { pkg <- as.character(substitute(pkg)) }
+  pkg <- ifelse(!character.only, as.character(substitute(pkg)) , pkg)  
+  if (!require(pkg,character.only=T, quietly =T)) {  install.packages(substitute(pkg),dep=T); if(!require(pkg,character.only=T)) stop("Package not found") } 
+}
+loadPkg(knitr)
+
+# unload/detact package when done using it
+unloadPkg = function(pkg, character.only = FALSE) { 
+  if(!character.only) { pkg <- as.character(substitute(pkg)) } 
+  search_item <- paste("package", pkg,sep = ":") 
+  while(search_item %in% search()) { detach(search_item, unload = TRUE, character.only = TRUE) } 
+}
+```
+
+
+# Titanic Tragedy Dataset  
+
+## Preparation
+
+### Question 1
+
+**Import the dataset into R**  
+>Import the dataset into R, and call it titanic_orig, and explore it little to get the overall picture of the dataset. Eventually we would like to see what affected survival in the tragedy.  
+
+```{r import_data}
+titanic_orig <- read.csv("Titanic.csv", header = TRUE)
+str(titanic_orig)
+summary(titanic_orig)
+```
+
+We have the following variables in the `Titanic.csv` dataset: `r names(titanic_orig)`. The variables have the following classes:
+
+```{r var_classes}
+loadPkg(kableExtra)
+sapply(titanic_orig, class) %>%
+  kable() %>%
+  kable_styling(bootstrap_options = c("striped", "hover"))
+```
+
+
+### Question 2 
+**Age**  
+>One of the main factors we will try is Age. How many missing values are there for the variable “age”? If not too many, we should just clean those up and subset those out. 
+
+The number of missing values for the variable `age` is `r sum(is.na(titanic_orig$age))`. We have quite a few missing values, especially when we consider that there are `r nrow(titanic_orig)` entries in the data. This means that the missing values account for `r 100*((sum(is.na(titanic_orig$age)))/nrow(titanic_orig))`% of the data in the column for `age`. We can also check the other variables for missing values as well.
+
+```{r missing_vals}
+na_count <-sapply(titanic_orig, function(y) sum(length(which(is.na(y)))))
+na_count$name<-rownames(na_count)
+na_count <- data.frame(na_count)
+na_count %>%
+  kable() %>%
+  kable_styling(bootstrap_options = c("striped", "hover"))
+```
+
+I'm going to clean up the NA values in the `age` data and look at it without the NA values.
+
+```{r clean_age}
+titanic_full <- titanic_orig
+#titanic_orig <- na.omit(titanic_orig)
+age_noNA <- na.omit(titanic_orig$age)
+summary(age_noNA)
+```
+
+
+### Question 3  
+**More clean up**  
+>While we are cleaning up the data, if we were to use sibsp and parch in our analysis, even though they are legitimately ratio level variables, we might not expect doubling the number of siblings necessarily double the effects on survival. For this reason, we should change these two variables to factor levels. Also change the other ones that you find imported as the wrong data type.  
+
+I will change `sibsp` and `parch` to factors.
+
+```{r sibsp_parch_factor}
+titanic_orig$sibsp <- as.factor(titanic_orig$sibsp)
+titanic_orig$parch <- as.factor(titanic_orig$parch)
+```
+
+Done. Let me check that it worked:
+
+variable | class                         |                 is it a factor? |
+---------|-------------------------------|---------------------------------|
+sibsp    | `r class(titanic_orig$sibsp)` | `r is.factor(titanic_orig$sibsp)`
+parch    | `r class(titanic_orig$parch)` | `r is.factor(titanic_orig$parch)`
+
+I can see that the `survival` variable has two options: 0 (No) or 1 (Yes), indicating if the individual survived or not. I can change this variable to a factor. I can also change the `id` to a factor, because I do not expect the numerical value of the id to affect the chances of survival, much in the same way that we might not expect doubling the number of siblings necessarily double the effects on survival. I can also see that `ticket` was imported as a factor, and when I look at the ticket names I see combinations of letters and numbers. I will leave it as a factor. I will also change `pclass` to a factor as well, because there are only three options: 1 (1st class), 2 (2nd class), and 3 (third class). 
+
+```{r change_var_classes}
+titanic_orig$id <- as.factor(titanic_orig$id)
+titanic_orig$survived <- as.factor(titanic_orig$survived)
+titanic_orig$pclass <- as.factor(titanic_orig$pclass)
+#titanic_orig$ticket <- as.numeric(titanic_orig$ticket)
+```
+
+Now I can check the classes of those variables.
+
+variable | class                            |
+---------|----------------------------------|
+pclass   | `r class(titanic_orig$pclass)`   |
+id       | `r class(titanic_orig$id)`       |
+survived | `r class(titanic_orig$survived)` |
+ticket   | `r class(titanic_orig$ticket)`   |
+
+
+## Pre-logistic Regression
+
+### Question 4  
+**Survival and age**  
+>Before using our newly learned technique with logistic regression, let’s go old school, and use some prior knowledge to try find an answer. Does the data support that “age” very much affects “survival”?
+
+We can look at the histograms and boxplots of `age` when we use `survived` as a factor. 
+
+```{r age_survival}
+loadPkg(ggplot2)
+loadPkg(gridExtra)
+
+barchart_age_survive <- ggplot(titanic_orig, aes(x=survived, y=age, color=survived)) + 
+  theme_minimal() +
+  theme(panel.border = element_rect(colour = "black", fill=NA, size=1)) + 
+  labs(title="Barchart of \nage of passenger vs \nwhether they survived or not", 
+       x="survival", y="age (in years)") +
+  geom_boxplot() + 
+  stat_summary(fun.y=mean, geom="point", shape=23, size=4)
+
+hist_age_survive <- ggplot(titanic_orig, aes(x=age, color=survived, fill=survived)) +
+   geom_histogram(aes(y=..density..), binwidth = 3, alpha = 0.35, 
+                  position="identity") + 
+   theme_minimal() +
+   theme(panel.border = element_rect(colour = "black", fill=NA, size=1)) + 
+   labs(title="Histogram of \nthe ages of the passengers and \nwhether they survived or not", x="age (in years)", y="relative frequency") 
+
+grid.arrange(hist_age_survive, barchart_age_survive, ncol = 2, nrow = 1)
+```
+
+We can see that of the people that survived there is a peak in the histogram at very young and very old ages. We can also see that for the histogram where individuals did not survive there is a higher peak among the ages that are in their 20s. We can also see that there are quite a middle aged adults that do not survive until they reach much older ages like ~80 years old. We can see from the boxplot that the average age of the individuals that did not survive is older than the average age than that of the individuals that did survive, which makes sense when we consider how there are quite a few very young individuals that survived. We can use the ANOVA test to check the means between these two groups. 
+
+In one-way ANOVA test, a significant $p$-value indicates that some of the group means are different, but we don’t know which pairs of groups are different. We use a significance level of $\alpha = 0.05$.
+
+```{r anova_age_survival}
+anova_age_survived <- aov(age ~ survived, titanic_orig)
+summary(anova_age_survived)
+pval_age_survived <- summary(anova_age_survived)[[1]][["Pr(>F)"]][[1]]
+```
+
+We can see that for the ANOVA test comparing `age ~ survived` we have $p$ = `r formatC(pval_age_survived, format = "e", digits = 3)`. The $p$-value here is below $\alpha = 0.05$, which means that the mean age between the two groups (lived or died) is different. However the value is not as significantly different as it could have been. We can look at these two groups separately as well. Here is a summary of the ages of the individuals that lived:
+
+```{r ppl_lived}
+age_lived <- titanic_orig$age[titanic_orig$survived == 1]
+survived_1s <- rep(1, length(age_lived))
+survived_df_1s <- do.call(rbind, Map(data.frame, "age"=age_lived, "survived"=survived_1s))
+sum_age_lived <- summary(age_lived)
+summary(age_lived)
+```
+
+And here is a summary of the individuals that died:
+
+```{r ppl_died}
+age_died <- titanic_orig$age[titanic_orig$survived == 0]
+survived_0s <- rep(0, length(age_died))
+survived_df_0s <- do.call(rbind, Map(data.frame, "age"=age_died, "survived"=survived_0s))
+sum_age_died <- summary(age_died)
+sum_age_died
+```
+
+We see that younger and older individuals survived and that the mean for those that survived is younger than the mean of those that did not survive, like we thought from the ANOVA test. It appears that if you are at the extremes of age (very young or very old) you might be more likely to survive, and in general younger individuals survived. 
+
+```{r age_survived_residuals}
+# lm_age_1s = lm(age ~ survived, survived_df_1s)
+# res_age_1s = resid(lm_age_1s)
+# 
+# plot(survived_df_1s$age, res_age_1s, ylab="Residuals", xlab="age (in years)",
+#       main="Residuals in age data of individuals that lived")
+#  abline(0, 0)
+# 
+# par(mfrow = c(2, 2))
+# plot(lm_age_1s)
+```
+
+
+### Question 5  
+**Survival and gender**  
+>Similarly, does the data support “sex” has an effect on “survival”? 
+
+We can look at the barcharts of `sex` when we use `survived` as a factor. 
+
+```{r survival_sex}
+sex_lived <- titanic_orig$sex[titanic_orig$survived == 1]
+df_sex_1s <- do.call(rbind, Map(data.frame, "sex"=sex_lived, "survived"=survived_1s))
+sex_died <- titanic_orig$sex[titanic_orig$survived == 0]
+df_sex_0s <- do.call(rbind, Map(data.frame, "sex"=sex_died, "survived"=survived_0s))
+
+loadPkg(plyr)
+
+freq_sex_lived <- count(df_sex_1s, "sex")
+freq_sex_died <- count(df_sex_0s, "sex")
+
+barchart_sex_lived <- ggplot(freq_sex_lived, aes(x=reorder(sex, -freq), 
+                                                 y=freq, fill=sex)) +
+   geom_bar(aes(y=freq), stat="identity", color="black") + 
+   theme_minimal() + 
+   theme(axis.text.x = element_text(angle = 45, vjust = 1, size = 12, hjust = 1), 
+         axis.text.y = element_text(vjust = 1, size = 12, hjust = 1), 
+         panel.border = element_rect(colour = "black", fill=NA, size=1)) + 
+   labs(title="Barchart of number of passengers \nthat survived vs \nthe sex of said passengers", 
+        x="sex", y="Number of passengers") 
+
+barchart_sex_died <- ggplot(freq_sex_died, aes(x=reorder(sex, -freq), 
+                                                 y=freq, fill=sex)) +
+   geom_bar(aes(y=freq), stat="identity", color="black") + 
+   theme_minimal() + 
+   theme(axis.text.x = element_text(angle = 45, vjust = 1, size = 12, hjust = 1), 
+         axis.text.y = element_text(vjust = 1, size = 12, hjust = 1), 
+         panel.border = element_rect(colour = "black", fill=NA, size=1)) + 
+   labs(title="Barchart of number of passengers \nthat did not survive vs \nthe sex of said passengers", 
+        x="sex", y="Number of passengers") 
+
+grid.arrange(barchart_sex_lived, barchart_sex_died, ncol = 2, nrow = 1)
+```
+
+We can also look at these barcharts as normalized by the total number of passengers, which would give us an idea of the percentages of those individuals that lived or died and what their sex was.
+
+```{r tot_men_women}
+tot_num_fm <- count(titanic_orig, "sex")
+rel_freq_fm <- tot_num_fm$freq/nrow(titanic_orig)
+tot_num_fm <- cbind(tot_num_fm, "rel.freq"=rel_freq_fm)
+tot_num_fm %>%
+  kable() %>%
+  kable_styling(bootstrap_options = c("striped", "hover"))
+```
+
+We see that men were `r 100*tot_num_fm$rel.freq[tot_num_fm$sex == "male"]`% of the total number of passengers whereas women were `r 100*tot_num_fm$rel.freq[tot_num_fm$sex == "female"]`% of the total number of passengers. We can look at the rates of survival by look at the relative frequency to the total number of passengers, or we can also look at in-group survival rates rather than to the entire group.   
+
+
+```{r norm_barchart_sex}
+dec_sex_lived <- freq_sex_lived$freq/nrow(titanic_orig)
+freq_sex_lived <- cbind(freq_sex_lived, "rel.freq"=dec_sex_lived)
+sl_names <- c("female.lived", "male.lived")
+freq_sex_lived <- cbind("sex.cond"=sl_names, freq_sex_lived)
+
+dec_sex_died <- freq_sex_died$freq/nrow(titanic_orig)
+freq_sex_died <- cbind(freq_sex_died, "rel.freq"=dec_sex_died)
+sd_names <- c("female.died", "male.died")
+freq_sex_died <- cbind("sex.cond"=sd_names, freq_sex_died)
+
+freq_sex_total <- rbind(freq_sex_lived, freq_sex_died)
+
+ggplot(freq_sex_total, aes(x=reorder(sex.cond, -rel.freq), y=rel.freq, fill=sex.cond)) +
+    geom_bar(aes(y=rel.freq), stat="identity", color="black") + 
+    theme_minimal() + 
+    theme(axis.text.x = element_text(angle = 45, vjust = 1, size = 12, hjust = 1), 
+          axis.text.y = element_text(vjust = 1, size = 12, hjust = 1), 
+          panel.border = element_rect(colour = "black", fill=NA, size=1)) + 
+    labs(title="Barchart of relative frequency of passengers that lived or died \nvs the sex of said passengers", x="sex and survival status", y="relative frequency") 
+```
+
+This barchart is a bit more illuminating than the above. Now we can see the percentages of who did or did not survive, and also the sex of that individual.
+
+sex    | did they live? | percentage |
+-------|----------------|------------|
+male   | yes            | `r 100*freq_sex_total$rel.freq[freq_sex_total$sex.cond == "male.lived"]`%
+male   | no             | `r 100*freq_sex_total$rel.freq[freq_sex_total$sex.cond == "male.died"]`%
+female | yes            | `r 100*freq_sex_total$rel.freq[freq_sex_total$sex.cond == "female.lived"]`%
+female | no             | `r 100*freq_sex_total$rel.freq[freq_sex_total$sex.cond == "female.died"]`% 
+
+These results might be showing that more than half of the men died, but also we do have to consider that men were over sixty percent of the passengers (which is the value you get, when you add the relative frequencies in the chart above for men). These relative frequencies were normalized using the total number of passengers. We can look at specifically among the numbers of men and women, and see what that gives us.
+
+```{r ingroup_stats}
+freq_sex_total <- freq_sex_total[order(freq_sex_total$sex),]
+freq_w <- as.numeric(round(freq_sex_total$freq[freq_sex_total$sex == "female"]/tot_num_fm$freq[tot_num_fm$sex == "female"], 3))
+freq_m <- as.numeric(round(freq_sex_total$freq[freq_sex_total$sex == "male"]/tot_num_fm$freq[tot_num_fm$sex == "male"], 3))
+
+cond_w <- c("female.lived", "female.died")
+cond_m <- c("male.lived", "male.died")
+
+freq_w <- cbind("rel.freq.adj"=freq_w, "cond"=cond_w)
+freq_m <- cbind("rel.freq.adj"=freq_m, "cond"=cond_m)
+freq_wm <- rbind(freq_w, freq_m)
+freq_wm <- subset(freq_wm, select = -cond)
+freq_sex_total <- cbind(freq_sex_total, freq_wm)
+freq_sex_total$rel.freq.adj <- as.numeric(as.character(freq_sex_total$rel.freq.adj))
+head(freq_sex_total)
+
+ggplot(freq_sex_total, aes(x=reorder(sex.cond, -rel.freq.adj), y=rel.freq.adj, 
+                           fill=sex.cond)) +
+    geom_bar(aes(y=rel.freq.adj), stat="identity", color="black") + 
+    theme_minimal() + 
+    theme(axis.text.x = element_text(angle = 45, vjust = 1, size = 12, hjust = 1), 
+          axis.text.y = element_text(vjust = 1, size = 12, hjust = 1), 
+          panel.border = element_rect(colour = "black", fill=NA, size=1)) + 
+    labs(title="Barchart of \nadjusted relative frequency of passengers that lived or died \nvs the sex of said passengers", x="sex and survival status", y="adjusted relative frequency") 
+```
+
+I believe that this above barchart is the most illuminating. This shows the adjusted frequencies based on the passenger's sex. This was done because men were `r 100*tot_num_fm$rel.freq[tot_num_fm$sex == "male"]`% of the total number of passengers and women were `r 100*tot_num_fm$rel.freq[tot_num_fm$sex == "female"]`%. 
+
+```{r shw_adj_rel_freq}
+freq_sex_total %>%
+  kable() %>%
+  kable_styling(bootstrap_options = c("striped", "hover"))
+```
+
+If the passenger was a man then, among men (`r 100*tot_num_fm$rel.freq[tot_num_fm$sex == "male"]`% of passengers), he had an `r 100*freq_sex_total$rel.freq.adj[freq_sex_total$sex.cond == "male.died"][1]`% chance of dying, and a `r 100*freq_sex_total$rel.freq.adj[freq_sex_total$sex.cond == "male.lived"]`% chance of living. 
+
+If a passenger was a woman then, among women (`r 100*tot_num_fm$rel.freq[tot_num_fm$sex == "female"]`% of passengers), she had an `r 100*freq_sex_total$rel.freq.adj[freq_sex_total$sex.cond == "female.died"]`% chance of dying, and a `r 100*freq_sex_total$rel.freq.adj[freq_sex_total$sex.cond == "female.lived"]`% chance of living. 
+
+To study the effects on `survival` by the factor `sex` (`survived` and `sex` are both categorical variables), we can create two-way contingency table of the outcome and predictors, and make sure there are no cells of zero frequencies. 
+
+```{r crosstable}
+admitranktable_survived_sex = xtabs(~ survived + sex, data = titanic_orig)
+admitranktable_survived_sex %>%
+  kable() %>%
+  kable_styling(bootstrap_options = c("striped", "hover"))
+```
+
+We can then quickly run a chi-squared test to see if the two are independent (or same frequency distribution). 
+
+```{r chisq}
+chisqres_survived_sex = chisq.test(admitranktable_survived_sex)
+chisqres_survived_sex
+```
+
+From the small p-value of `r chisqres_survived_sex$p.value`, we conclude that the survived and did not survive subgroups have different frequency distribution among sex. This is just another way of saying that the `sex` and `survival` are NOT independent.
+
+
+### Question 6   
+**Survival and pclass**  
+>Another big question is, does the data support Ticket class “pclass” has an effect on “survival”? 
+
+We can take a quick look at a barchart with the `pclass` data and whether the passenger survived or not. 
+
+```{r survival_pclass}
+pclass_lived <- titanic_orig$pclass[titanic_orig$survived == 1]
+df_pclass_1s <- do.call(rbind, Map(data.frame, "pclass"=pclass_lived, "survived"=survived_1s))
+pclass_died <- titanic_orig$pclass[titanic_orig$survived == 0]
+df_pclass_0s <- do.call(rbind, Map(data.frame, "pclass"=pclass_died, "survived"=survived_0s))
+
+freq_pclass_lived <- count(df_pclass_1s, "pclass")
+freq_pclass_died <- count(df_pclass_0s, "pclass")
+
+barchart_pclass_lived <- ggplot(freq_pclass_lived, aes(x=reorder(pclass, -freq), 
+                                                 y=freq, fill=pclass)) +
+   geom_bar(aes(y=freq), stat="identity", color="black") + 
+   theme_minimal() + 
+   theme(axis.text.x = element_text(angle = 45, vjust = 1, size = 12, hjust = 1), 
+         axis.text.y = element_text(vjust = 1, size = 12, hjust = 1), 
+         panel.border = element_rect(colour = "black", fill=NA, size=1)) + 
+   labs(title="Barchart of number of passengers \nthat survived vs \nthe class of said passengers", 
+        x="class", y="Number of passengers") 
+
+barchart_pclass_died <- ggplot(freq_pclass_died, aes(x=reorder(pclass, -freq), 
+                                                 y=freq, fill=pclass)) +
+   geom_bar(aes(y=freq), stat="identity", color="black") + 
+   theme_minimal() + 
+   theme(axis.text.x = element_text(angle = 45, vjust = 1, size = 12, hjust = 1), 
+         axis.text.y = element_text(vjust = 1, size = 12, hjust = 1), 
+         panel.border = element_rect(colour = "black", fill=NA, size=1)) + 
+   labs(title="Barchart of number of passengers \nthat did not survive vs \nthe class of said passengers", 
+        x="class", y="Number of passengers") 
+
+grid.arrange(barchart_pclass_lived, barchart_pclass_died, ncol = 2, nrow = 1)
+```
+
+It might be more illuminating to look at the percent of passengers that are 1st, 2nd, and 3rd class and then to look at survival rates among those classes. This is much like my final bar chart in the previous section. 
+
+```{r pclass_adj_freq}
+tot1st <- sum(titanic_orig$pclass == 1)
+tot2nd <- sum(titanic_orig$pclass == 2)
+tot3rd <- sum(titanic_orig$pclass == 3)
+totals <- c(tot1st, tot2nd, tot3rd)
+
+freq_pclass_lived <- cbind(freq_pclass_lived, "total"=totals)
+freq_pclass_died <- cbind(freq_pclass_died, "total"=totals)
+
+rel_freq_pclass_live <- freq_pclass_lived$freq/freq_pclass_lived$total
+rel_freq_pclass_die <- freq_pclass_died$freq/freq_pclass_died$total
+
+freq_pclass_lived <- cbind(freq_pclass_lived, "adj.freq"=rel_freq_pclass_live)
+freq_pclass_died <- cbind(freq_pclass_died, "adj.freq"=rel_freq_pclass_die)
+
+cond_pclass_live <- c("first.lived", "second.lived", "third.lived")
+cond_pclass_die <- c("first.died", "second.died", "third.died")
+
+freq_pclass_lived <- cbind(freq_pclass_lived, "condition"=cond_pclass_live)
+freq_pclass_died <- cbind(freq_pclass_died, "condition"=cond_pclass_die)
+
+freq_pclass_tot <- rbind(freq_pclass_lived, freq_pclass_died)
+freq_pclass_tot$adj.freq <- as.numeric(as.character(freq_pclass_tot$adj.freq))
+
+ggplot(freq_pclass_tot, aes(x=reorder(condition, -adj.freq), y=adj.freq, 
+                           fill=condition)) +
+    geom_bar(aes(y=adj.freq), stat="identity", color="black") + 
+    theme_minimal() + 
+    theme(axis.text.x = element_text(angle = 45, vjust = 1, size = 12, hjust = 1), 
+          axis.text.y = element_text(vjust = 1, size = 12, hjust = 1), 
+          panel.border = element_rect(colour = "black", fill=NA, size=1)) + 
+    labs(title="Barchart of \nadjusted relative frequency of passengers that lived or died \nvs the class of said passengers", x="class and survival status", y="adjusted relative frequency") 
+```
+
+```{r pclass_table}
+freq_pclass_tot %>%
+  kable() %>%
+  kable_styling(bootstrap_options = c("striped", "hover"))
+```
+
+First class passengers were `r 100*(tot1st/nrow(titanic_orig))`% of the total passengers. If you were a first class passenger, of first class passengers, you had a `r 100*freq_pclass_tot$adj.freq[freq_pclass_tot$condition == "first.lived"]`% chance of living and a `r 100*freq_pclass_tot$adj.freq[freq_pclass_tot$condition == "first.died"]`% chance of dying. 
+
+Second class passengers were `r 100*(tot2nd/nrow(titanic_orig))`% of the total passengers. If you were a second class passenger, of second class passengers, you had a `r 100*freq_pclass_tot$adj.freq[freq_pclass_tot$condition == "second.lived"]`% chance of living and a `r 100*freq_pclass_tot$adj.freq[freq_pclass_tot$condition == "second.died"]`% chance of dying. 
+
+Third class passengers were `r 100*(tot3rd/nrow(titanic_orig))`% of the total passengers. This was the largest group of the total passengers. If you were a third class passenger, of third class passengers, you had a `r 100*freq_pclass_tot$adj.freq[freq_pclass_tot$condition == "third.lived"]`% chance of living and a `r 100*freq_pclass_tot$adj.freq[freq_pclass_tot$condition == "third.died"]`% chance of dying.
+
+This supports the theory that class affected your chances of survival. If you were a third class passenger, which were the majority of passengers, you were more likely to die than first or second class passengers. For second class passengers, the smallest group of all the passengers, you had about an equal chance of surviving or dying. First class passengers, which was about the same size as second class passengers of the total passengers, were the only group were your chances of living were higher than your chances of dying, and you were more likely to live if you were a first class passenger than you were to die. 
+
+To study the effects on `survival` by the factor `pclass` (`survived` and `pclass` are both categorical variables), we can create two-way contingency table of the outcome and predictors, and make sure there are no cells of zero frequencies. 
+
+```{r crosstable_pclass}
+admitranktable_survived_pclass = xtabs(~ survived + pclass, data = titanic_orig)
+admitranktable_survived_pclass %>%
+  kable() %>%
+  kable_styling(bootstrap_options = c("striped", "hover"))
+```
+
+We can then quickly run a chi-squared test to see if the two are independent (or same frequency distribution). 
+
+```{r chisq_pclass}
+chisqres_survived_pclass = chisq.test(admitranktable_survived_pclass)
+chisqres_survived_pclass
+```
+
+From the small p-value of `r chisqres_survived_pclass$p.value`, we conclude that the survived and did not survive subgroups have different frequency distribution among the classes. This is just another way of saying that the `pclass` and `survival` are NOT independent.
+
+
+## Logistic Regression
+
+### Question 7   
+**Survival and age + pclass**  
+>Now let us build a logit model with age+pclass as predictors, and analyze the results. Remember to do all the model evaluation steps. Is the model a good one?
+
+Let us now turn our attention to logistic regression models. We know that there is very like an effect on `survival` by `age` and `pclass` and we run the model including these variables.  
+```{r logitmodel_age_pclass}
+surviveLogit_age_pclass <- glm(survived ~ age + pclass, data = titanic_orig, family = "binomial")
+# admitLogit <- glm(admit ~ gre + gpa + rank, data = Admit, binomial(link = "logit") )  # same result, slightly different syntax
+summary(surviveLogit_age_pclass)
+```
+
+All the coefficients are found significant (small p-values). We see that `age`, `pclass2` (2nd class), and `pclass3` all negatively affect the likelihood of survival. These are reasonable results and confirms the results found above.  
+
+We can also easily obtain the growth/decay factors for each explanatory variables. Notice that these factors apply to the odds-ratio, not the odds of being accepted. Nonetheless, these growth and decay factors are very useful in our analysis. The factors are the exponentials of the coefficients:   
+
+```{r growthDecayFactors_age_pclass}
+expcoeff_age_pclass = exp(coef(surviveLogit_age_pclass))
+expcoeff_age_pclass
+```
+
+From these results, we can say, for example:
+
+* The log(odds-ratio) for being admitted improve by a factor of `r expcoeff_age_pclass[2]` for each point of `age` score increase. Notice that for a, say 20-point age improvement, the chance of survival is changed not 20 times that value. Instead, the log(odds-ratio) improved by a factor of $(`r expcoeff_age_pclass[2]`)^{20}$. Any factor less than 1 represents a negative effect. 
+
+* The improvement of `pclass2` of 1 point will increase the log(odds-ratio) by a factor of `r expcoeff_age_pclass[3]`. Any factor less than 1 represents a negative effect.
+
+* The improvement of `pclass3` of 1 point will increase the log(odds-ratio) by a factor of `r expcoeff_age_pclass[4]`. Any factor less than 1 represents a negative effect.
+
+```{r logit_fitted_value_age_pclass}
+# surviveLogit_age_pclass$fitted.values[1]
+# predict(surviveLogit_age_pclass)[1]
+# 1/(1+exp(-predict(surviveLogit_age_pclass)[1]))
+```
+
+Before moving on to the next question, we can look at the model object `surviveLogit_age_pclass` a little deeper. The fitted values can be found from `surviveLogit_age_pclass$fitted.values`. 
+
+And the first fitted value is `r surviveLogit_age_pclass$fitted.values[1]`. This is the probability of surviving for data point #1. 
+
+Compare to the value from `predict(surviveLogit_age_pclass)` to be `r predict(surviveLogit_age_pclass)[1]`. The `predict()` function gives us the logit value. You can exponentiate to get the odds ratio p/q as `r exp(predict(surviveLogit_age_pclass)[1])`. 
+
+And finally, we can find p from p/q, and indeed it is confirmed to be `r 1/(1+exp(-predict(surviveLogit_age_pclass)[1]))`.
+
+We can easily determine the confidence intervals of each coefficient with two slightly different ways. The first method of determining the CIs by using profiled log-likelihood:    
+
+```{r ConfInt_age_pclass_log}
+## CIs using profiled log-likelihood
+confint(surviveLogit_age_pclass)
+```
+
+The second method of determining the CIs by using standard errors: 
+
+```{r ConfInt_age_pclass_se}
+## CIs using standard errors
+confint.default(surviveLogit_age_pclass)
+```
+
+We can use the Hosmer and Lemeshow Goodness of Fit test to evaluate logistic regression fit. 
+
+```{r HosmerLemeshow_age_pclass}
+loadPkg(ResourceSelection) # function hoslem.test( ) for logit model evaluation
+titanic_orig <- na.omit(titanic_orig)
+admitLogitHoslem_age_pclass <- hoslem.test(titanic_orig$survived, fitted(surviveLogit_age_pclass)) # Hosmer and Lemeshow test, a chi-squared test
+admitLogitHoslem_age_pclass
+```
+
+The Hosmer-Lemeshow statistic indicates a poor fit if the significance value is less than 0.05. The p-value of `r admitLogitHoslem_age_pclass$p.value` is below 0.05 which indicates the model is not really a good fit, despite the fact that all the coefficients are significant. 
+
+Receiver-Operator-Characteristic (ROC) curve and Area-Under-Curve (AUC) measures the true positive rate (or sensitivity) against the false positive rate (or specificity). The area-under-curve is always between 0.5 and 1. Values higher than 0.8 is considered good model fit. 
+
+```{r roc_auc_age_pclass}
+loadPkg(pROC) # receiver operating characteristic curve, gives the diagnostic ability of a binary classifier system as its discrimination threshold is varied. The curve is on sensitivity/recall/true-positive-rate vs false_alarm/false-positive-rate/fall-out.
+loadPkg(car)
+prob_age_pclass <- predict(admitLogitHoslem_age_pclass, type = c("response"))
+titanic_orig$prob <- prob_age_pclass
+h_age_pclass <- roc(survived~prob, data=titanic_orig)
+auc(h_age_pclass) # area-under-curve prefer 0.8 or higher.
+plot(h_age_pclass)
+```
+
+
+### Question 8  
+**More features**  
+>Can we improve the model? Let us also throw in “sex” as a predictor. How’s the model now?
+
+
+### Question 9  
+**Sample Predictions**  
+>According to the last model, what is the chance of survival for a female, age 10, second class passenger? And a male, age 20, first class passenger?
+
+## Interpretation  
+
+### Question 10  
+*Summary*  
+>With all the results you obtained above, how would you present a high-level summary of the findings? Are the results surprising or expected? You might need to dig a little deeper than just the numbers, the test results/p-values, and the model statistics. This is a question about who we are, … in the face of death. 
+
+
+```{r cleanup, include=FALSE}
+unloadPkg(kableExtra)
+unloadPkg(ggplot2)
+unloadPkg(gridExtra)
+unloadPkg(plyr)
+unloadPkg(ResourceSelection) 
+unloadPkg(pROC) 
+unloadPkg(car) 
+```
+
+
+
