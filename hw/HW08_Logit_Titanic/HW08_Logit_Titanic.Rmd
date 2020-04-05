@@ -311,7 +311,7 @@ freq_sex_total <- cbind(freq_sex_total, freq_wm)
 freq_sex_total$rel.freq.adj <- as.numeric(as.character(freq_sex_total$rel.freq.adj))
 head(freq_sex_total)
 
-ggplot(freq_sex_total, aes(x=reorder(sex.cond, -rel.freq.adj), y=rel.freq.adj, 
+sex_survival_plot <- ggplot(freq_sex_total, aes(x=reorder(sex.cond, -rel.freq.adj), y=rel.freq.adj, 
                            fill=sex.cond)) +
     geom_bar(aes(y=rel.freq.adj), stat="identity", color="black") + 
     theme_minimal() + 
@@ -319,6 +319,7 @@ ggplot(freq_sex_total, aes(x=reorder(sex.cond, -rel.freq.adj), y=rel.freq.adj,
           axis.text.y = element_text(vjust = 1, size = 12, hjust = 1), 
           panel.border = element_rect(colour = "black", fill=NA, size=1)) + 
     labs(title="Barchart of \nadjusted relative frequency of passengers that lived or died \nvs the sex of said passengers", x="sex and survival status", y="adjusted relative frequency") 
+sex_survival_plot
 ```
 
 I believe that this above barchart is the most illuminating. This shows the adjusted frequencies based on the passenger's sex. This was done because men were `r 100*tot_num_fm$rel.freq[tot_num_fm$sex == "male"]`% of the total number of passengers and women were `r 100*tot_num_fm$rel.freq[tot_num_fm$sex == "female"]`%. 
@@ -416,7 +417,7 @@ freq_pclass_died <- cbind(freq_pclass_died, "condition"=cond_pclass_die)
 freq_pclass_tot <- rbind(freq_pclass_lived, freq_pclass_died)
 freq_pclass_tot$adj.freq <- as.numeric(as.character(freq_pclass_tot$adj.freq))
 
-ggplot(freq_pclass_tot, aes(x=reorder(condition, -adj.freq), y=adj.freq, 
+class_survive_plot <- ggplot(freq_pclass_tot, aes(x=reorder(condition, -adj.freq), y=adj.freq, 
                            fill=condition)) +
     geom_bar(aes(y=adj.freq), stat="identity", color="black") + 
     theme_minimal() + 
@@ -424,6 +425,7 @@ ggplot(freq_pclass_tot, aes(x=reorder(condition, -adj.freq), y=adj.freq,
           axis.text.y = element_text(vjust = 1, size = 12, hjust = 1), 
           panel.border = element_rect(colour = "black", fill=NA, size=1)) + 
     labs(title="Barchart of \nadjusted relative frequency of passengers that lived or died \nvs the class of said passengers", x="class and survival status", y="adjusted relative frequency") 
+class_survive_plot
 ```
 
 ```{r pclass_table}
@@ -643,6 +645,82 @@ The probability of a passenger surviving if he is a young adult man of 20 years 
 ### Question 10  
 *Summary*  
 >With all the results you obtained above, how would you present a high-level summary of the findings? Are the results surprising or expected? You might need to dig a little deeper than just the numbers, the test results/p-values, and the model statistics. This is a question about who we are, … in the face of death. 
+
+## Summary of Age Results
+
+```{r hist_age_survival}
+survived_df_0s <- na.omit(survived_df_0s)
+survived_df_1s <- na.omit(survived_df_1s)
+
+hist_ages_lived <- ggplot(survived_df_1s, aes(x=age)) +
+   geom_histogram(aes(y=..density..), binwidth = 3, alpha = 0.35, 
+                  position="identity", fill="lightblue", color="blue") + 
+   theme_minimal() +
+   theme(panel.border = element_rect(colour = "black", fill=NA, size=1)) + 
+   labs(title="Histogram of \nthe ages of the passengers \nthat survived", x="age (in years)", y="relative frequency") + 
+  geom_vline(xintercept = mean(survived_df_1s[["age"]]), linetype="dotted", 
+             color = "purple", size=1.5) 
+
+hist_ages_died <- ggplot(survived_df_0s, aes(x=age)) +
+   geom_histogram(aes(y=..density..), binwidth = 3, alpha = 0.35, 
+                  position="identity", fill="pink", color="red") + 
+   theme_minimal() +
+   theme(panel.border = element_rect(colour = "black", fill=NA, size=1)) + 
+   labs(title="Histogram of \nthe ages of the passengers \nthat did not survived", x="age (in years)", y="relative frequency") + 
+  geom_vline(xintercept = mean(survived_df_0s[["age"]]), linetype="dotted", 
+             color = "darkred", size=1.5) 
+
+grid.arrange(hist_ages_lived, hist_ages_died, ncol = 2, nrow = 1)
+```
+
+From the histograms and the ANOVA test we know that the mean ages between the groups that survived and did not survive are different. We see that the ages for the group that survived skew slightly younger, and we can see how the ages for those that survived have a peak around ages that we would associated with babies. We also see that essentially no middle ages individuals survived, and that only the oldest individuals (around 80) survived. This result is agreed with by the logistic regression results, which showed that age negatively affects survival (or, from the last model, we saw that the log(odds-ratio) for being admitted improve by a factor of `r expcoeff_age_pclass_sex[2]` for each point of `age` score increase---the value below 1 means that it's a negative effect). 
+
+This confirms our general belief that children and the elderly would be allowed to escape first.   
+
+## Summary of Sex Results
+
+```{r plot_sex}
+sex_survival_plot
+```
+
+
+The logistic regression analysis confirms the traditional analysis we did in the first part. It does indeed seem that age, sex, and class affected the chances of survival for the passengers aboard the Titanic. Although there were less women (`r 100*tot_num_fm$rel.freq[tot_num_fm$sex == "female"]`% of passengers) if you were a woman you had a `r 100*freq_sex_total$rel.freq.adj[freq_sex_total$sex.cond == "female.lived"]`% chance of living. This is opposed to men, who were the majority (`r 100*tot_num_fm$rel.freq[tot_num_fm$sex == "male"]`% of passengers), but if you were a man you had a `r 100*freq_sex_total$rel.freq.adj[freq_sex_total$sex.cond == "male.died"][1]`% chance of dying. The chi-square test shows us that the chances of survival is NOT independent from the sex. We also see from the last model that being a male negatively affects your chances of survival (we saw that the improvement of `sexmale` of 1 point will increase the log(odds-ratio) by a factor of `r expcoeff_age_pclass_sex[5]`). 
+
+This confirms our belief that women were allowed to escape first, before men. 
+
+## Summary of Class Results
+
+```{r class_survive_show}
+class_survive_plot
+```
+
+While first class passengers were only `r 100*(tot1st/nrow(titanic_orig))`% of the total passengers, you had a `r 100*freq_pclass_tot$adj.freq[freq_pclass_tot$condition == "first.lived"]`% chance of living if you were first class. This is opposed to third class passengers, who were `r 100*(tot3rd/nrow(titanic_orig))`% of the total passengers, but if you were third class then you had `r 100*freq_pclass_tot$adj.freq[freq_pclass_tot$condition == "third.died"]`% chance of dying. Second class passengers had roughly a 50-50 chance of survival. This shows that if you were a wealthier passenger that you were saved over poorer passengers. This result is confirmed by the logistic regression models as well. According the the last model, if you were a second class passenger the improvement of `pclass2` of 1 point will increase the log(odds-ratio) by a factor of `r expcoeff_age_pclass_sex[3]`. If you were a third class passenger the improvement of `pclass3` of 1 point will increase the log(odds-ratio) by a factor of `r expcoeff_age_pclass_sex[4]`.
+
+We see that wealthier passengers in first class were more likely to survive than the poored passengers. 
+
+## Overall
+
+We see that if you were very young or very old, you were likely to survive the sinking of the Titanic. If you were a woman you were also likely to survive. If you were a wealthier passenger in first class you were also likely to survive. This means that the group most likely to survive the sinking of the titanic would be a young woman in first class. We can find the probability for this as well. We will choose a few hypothetical individuals to examine: 
+
+1. a young 10 year old girl in first class
+3. a 20 year old woman in first class
+2. a man of average age (~30 for both groups) in third class
+
+```{r predict_survival}
+newdata2 <- data.frame(age = 10, sex = "female", pclass = "1", survived = "1")
+prob_newdata2 <- predict(surviveLogit_age_pclass_sex, newdata2, type="response")
+
+newdata3 <- data.frame(age = 30, sex = "male", pclass = "3", survived = "1")
+prob_newdata3 <- predict(surviveLogit_age_pclass_sex, newdata3, type="response")
+
+newdata4 <- data.frame(age = 20, sex = "female", pclass = "1", survived = "1")
+prob_newdata4 <- predict(surviveLogit_age_pclass_sex, newdata4, type="response")
+```
+
+The probability of surviving the sinking of the Titanic, according to our last model, if you are a young 10 year old girl in first class was `r 100*prob_newdata2`. A 20 year old woman in first class had a `r 100*prob_newdata4`% chance of survival. This is compared to the probability of surviving if you were a 30 year old man in third class, which was `r 100*prob_newdata3`%.
+
+Here we can see it plainly: in order to survive the sinking of the Titanic you needed to be a child, a woman, and a wealthier passenger in first class. 
+
 
 
 ```{r cleanup, include=FALSE}
