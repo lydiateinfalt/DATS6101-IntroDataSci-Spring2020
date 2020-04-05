@@ -465,7 +465,8 @@ From the small p-value of `r chisqres_survived_pclass$p.value`, we conclude that
 **Survival and age + pclass**  
 >Now let us build a logit model with age+pclass as predictors, and analyze the results. Remember to do all the model evaluation steps. Is the model a good one?
 
-Let us now turn our attention to logistic regression models. We know that there is very like an effect on `survival` by `age` and `pclass` and we run the model including these variables.  
+Let us now turn our attention to logistic regression models. We know that there is very like an effect on `survival` by `age` and `pclass` and we run the model including these variables. 
+
 ```{r logitmodel_age_pclass}
 surviveLogit_age_pclass <- glm(survived ~ age + pclass, data = titanic_orig, family = "binomial")
 # admitLogit <- glm(admit ~ gre + gpa + rank, data = Admit, binomial(link = "logit") )  # same result, slightly different syntax
@@ -555,10 +556,87 @@ With the McFadden value of `r mcFadden_age_pclass`, which is analgous to the coe
 **More features**  
 >Can we improve the model? Let us also throw in “sex” as a predictor. How’s the model now?
 
+We can add `sex` into the model as a predictor. 
+
+```{r logitmodel_age_pclass_sex}
+surviveLogit_age_pclass_sex <- glm(survived ~ age + pclass + sex, data = titanic_orig, family = "binomial")
+summary(surviveLogit_age_pclass_sex)
+```
+
+All the coefficients are found significant (small p-values). We see that `age`, `pclass2` (2nd class), `pclass3`, and `sexmale` all negatively affect the likelihood of survival. These are reasonable results and confirms the results found above.  
+
+We can also obtain the growth/decay factors for each explanatory variables as we did in the previous section.  
+
+```{r growthDecayFactors_age_pclass_sex}
+expcoeff_age_pclass_sex = exp(coef(surviveLogit_age_pclass_sex))
+expcoeff_age_pclass_sex
+```
+
+We remember that any value below 1 represents a negative effect. From these results, we can say:
+
+* The log(odds-ratio) for being admitted improve by a factor of `r expcoeff_age_pclass_sex[2]` for each point of `age` score increase. Notice that for a, say 20-point age improvement, the chance of survival is changed not 20 times that value. Instead, the log(odds-ratio) improved by a factor of $(`r expcoeff_age_pclass_sex[2]`)^{20}$.  
+
+* The improvement of `pclass2` of 1 point will increase the log(odds-ratio) by a factor of `r expcoeff_age_pclass_sex[3]`.
+
+* The improvement of `pclass3` of 1 point will increase the log(odds-ratio) by a factor of `r expcoeff_age_pclass_sex[4]`. 
+
+* The improvement of `sexmale` of 1 point will increase the log(odds-ratio) by a factor of `r expcoeff_age_pclass_sex[5]`.
+
+We can use the Hosmer and Lemeshow Goodness of Fit test to evaluate logistic regression fit. 
+
+```{r HosmerLemeshow_age_pclass_sex}
+admitLogitHoslem_age_pclass_sex <- hoslem.test(titanic_orig$survived, fitted(surviveLogit_age_pclass_sex)) 
+admitLogitHoslem_age_pclass_sex
+```
+
+The Hosmer-Lemeshow statistic indicates a poor fit if the significance value is less than 0.05. The p-value of `r admitLogitHoslem_age_pclass_sex$p.value` is below 0.05 which indicates the model is not really a good fit, despite the fact that all the coefficients are significant. 
+
+Receiver-Operator-Characteristic (ROC) curve and Area-Under-Curve (AUC) measures the true positive rate (or sensitivity) against the false positive rate (or specificity). The area-under-curve is always between 0.5 and 1. Values higher than 0.8 is considered good model fit. 
+
+```{r roc_auc_age_pclass_sex}
+prob_age_pclass_sex <- predict(surviveLogit_age_pclass_sex, type = c("response"))
+titanic_orig$prob <- prob_age_pclass_sex
+h_age_pclass_sex <- roc(survived~prob, data=titanic_orig)
+auc(h_age_pclass_sex) # area-under-curve prefer 0.8 or higher.
+plot(h_age_pclass_sex)
+```
+
+We have here the area-under-curve of `r auc(h_age_pclass_sex)`, which is larger than 0.8. This test does not agrees with the Hosmer and Lemeshow test that the model is not considered a good fit, because values larger than 0.8 indicate a good fit. We can use another test to see how good our model is.  
+
+McFadden is another evaluation tool we can use on logit regressions. This is part of what is called pseudo-R-squared values for evaluation tests. We can calculate the value directly like we did before.
+
+```{r McFadden_direct_age_pclass_sex}
+admitNullLogit_age_pclass_sex <- glm(survived ~ 1, data = titanic_orig, family = "binomial")
+mcFadden_age_pclass_sex <- 1 - logLik(surviveLogit_age_pclass_sex)/logLik(admitNullLogit_age_pclass_sex)
+mcFadden_age_pclass_sex
+```
+
+With the McFadden value of `r mcFadden_age_pclass_sex`, which is analgous to the coefficient of determination $R^2$, about 33% of the variations in y is explained by the explanatory variables in the model. 
 
 ### Question 9  
 **Sample Predictions**  
 >According to the last model, what is the chance of survival for a female, age 10, second class passenger? And a male, age 20, first class passenger?
+
+We want to calculate a predicted probability of survival, for specific values of the predictors: 
+
+1. sex is female, age is 10, and she is a second class passenger.
+2. sex is male, age is 20, and he is a first class passenger
+
+To do that, we create a new data frame, in which we include the desired values for our prediction.
+
+```{r predict_female_10_2ndclass_survive}
+# prob of 1
+newdata <- data.frame(age = 10, sex = "female", pclass = "2", survived = "1")
+probpredict_f10_2ndclass_live <- predict(surviveLogit_age_pclass_sex, newdata, type="response")
+# prob of 2
+newdata1 <- data.frame(age = 20, sex = "male", pclass = "1", survived = "1")
+probpredict_m20_1stclass_live <- predict(surviveLogit_age_pclass_sex, newdata1, type="response")
+``` 
+
+From our second model, the probability of a passenger surviving if she is a young girl that is 10 years old and in 2nd class is `r 100*probpredict_f10_2ndclass_live`%. 
+
+The probability of a passenger surviving if he is a young adult man of 20 years and in 1st class is `r 100*probpredict_m20_1stclass_live`%. 
+
 
 ## Interpretation  
 
