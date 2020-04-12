@@ -194,6 +194,9 @@ pima_sample <- sample(2, nrow(scaledpima), replace=TRUE, prob=c(0.75, 0.25))
 # train and test
 pima_training <- scaledpima[pima_sample==1, 1:end]
 pima_test <- scaledpima[pima_sample==2, 1:end]
+# lab
+pima_train_labs <- pima[pima_sample == 1, 8]
+pima_test_labs <- pima[pima_sample == 2, 8]
 ```
 
 Now that we have our train and test data we need to create our 'Y' variables or labels need to input into the KNN function. We shall use the last column, which is the only column with factor level variables. 
@@ -265,12 +268,82 @@ head(pima_pred)
 IRISPREDCross <- CrossTable(pima.testLabels, pima_pred, prop.chisq = FALSE)
 ```
 
-**can we use the elbow method to check**
+We can also use the method provided to us in class to check what the "best" `k` value would be as well, to double check our above work.
 
+```{r k_select, echo = FALSE}
+chooseK = function(k, train_set, val_set, train_class, val_class){
+  set.seed(1)
+  class_knn = knn(train = train_set,
+                  test = val_set,
+                  cl = train_class,
+                  k = k)
+  
+  tab = table(class_knn, val_class)
+  accu = sum(tab[row(tab) == col(tab)]) / sum(tab)                         
+  cbind(k = k, accuracy = accu)
+}
 
+knn_different_k = sapply(seq(1, 35, by = 2),
+                         function(x) chooseK(x, 
+                                             train_set = scaledpima[pima_sample == 1, 1:7],
+                                             val_set = scaledpima[pima_sample == 2, 1:7],
+                                             train_class = pima[pima_sample == 1, 8],
+                                             val_class = pima[pima_sample == 2, 8]))
 
+#str(knn_different_k)
+knn_different_k = data.frame(k = knn_different_k[1,], accuracy = knn_different_k[2,])
+ggplot(knn_different_k,
+       aes(x = k, y = accuracy)) +
+  geom_line(color = "orange", size = 1.5) +
+  geom_point(size = 3)
+```
 
+It seems that the method we choose will give us different values for `k` as the "best". From our plot above using the code from class we get 3 values for the "best" `k`. 
 
+```{r find_max_accuracy}
+index_max <- which(knn_different_k$accuracy == max(knn_different_k$accuracy))
+knn_different_k[index_max,] %>%
+  kable() %>%
+  kable_styling(bootstrap_options = c("striped", "hover"))
+
+```
+
+We have $k$ = `r knn_different_k[index_max,]$k`. We will use the smallest value, which is $k_{\text{min}}$ = `r min(knn_different_k[index_max,]$k)`. We will repeat the KNN clustering analysis performed above.
+
+```{r k_min}
+k_min <- min(knn_different_k[index_max,]$k)
+pima_pred <- knn(train = pima_training, test = pima_test, cl=pima.trainLabels, k=k_min)
+head(pima_pred)
+IRISPREDCross <- CrossTable(pima.testLabels, pima_pred, prop.chisq = FALSE)
+```
+
+We have 3 different k values that were used: $k =$ 3, `r k_min`, and `r k_Acc`. I can check the accuracy of these compared with each other. 
+
+```{r check_accuraccy}
+#k=3
+k_3 <- knn(train = pima_training, test = pima_test, cl = pima_train_labs, k=3)
+k_3_xtable <- CrossTable(pima_test_labs, k_3, prop.chisq = FALSE)
+k_3_res <- k_3_xtable$prop.row %>%
+  kable(caption = "Results for k = 3") %>%
+  kable_styling(bootstrap_options = c("striped", "hover"))
+k_3_res
+# k = k_min
+k_min_r <- knn(train = pima_training, test = pima_test, cl = pima_train_labs, k=k_min)
+k_min_xtable <- CrossTable(pima_test_labs, k_min_r, prop.chisq = FALSE)
+k_min_res <- k_min_xtable$prop.row %>%
+  kable(caption = paste("Results for k = ", k_min)) %>%
+  kable_styling(bootstrap_options = c("striped", "hover"))
+k_min_res
+# k = k_Acc
+k_Acc_r <- knn(train = pima_training, test = pima_test, cl = pima_train_labs, k=k_Acc)
+k_Acc_xtable <- CrossTable(pima_test_labs, k_Acc_r, prop.chisq = FALSE)
+k_Acc_res <- k_Acc_xtable$prop.row %>%
+  kable(caption = paste("Results for k = ", k_Acc)) %>%
+  kable_styling(bootstrap_options = c("striped", "hover"))
+k_Acc_res
+```
+
+We see that the clearly better results are for $k =$ `r k_min` and `r k_Acc`. We have that for the accuracy of predicting the `No`s both have the same value of `r 100*0.925`%, and a failure of predicting the `No`s with `r 100*0.075`%. The difference comes in predicting the `Yes`s. For $k =$ `r k_min` we have that `Yes`s are accurate `r 100*0.397`% of the time, but inaccurate `r 100*0.603`%. This is opposed to the $k =$ `r k_Acc`, which predicts the accuracy of saying `Yes` with `r 100*0.362`%, and is inaccurate `r 100*0.638`% of the time. It is the more accurate model, but the $k =$ `r k_min` value was chosen by the code provided in class, and is less clusters. We will prefer the model with less clusters because the increase in accuracy is not very dramatic. 
 
 
 ## Logistic Regression and comparison  
@@ -278,6 +351,8 @@ IRISPREDCross <- CrossTable(pima.testLabels, pima_pred, prop.chisq = FALSE)
 ### Question 6   
 **Logistic Regression results**  
 Compare to the best logistic regression you can get. (Use the full model with all variables, since that is what we have for KNN.) How is the accuracy (assumes the standard cutoff of 0.5) compared to KNN? 
+
+#### Creating the logistic regression model
 
 I am going to make a logistic model using all the variables.
 
@@ -313,18 +388,6 @@ format(stat_sig_logit2, digits = 5) %>%
   kable_styling(bootstrap_options = c("striped", "hover"))
 ```
 
-Now we can look at the accuracy and the confusion matrix of our logit model. 
-
-```{r confusionMatrix8}
-loadPkg(regclass)
-pima_logit_confusion = confusion_matrix(pima_logit)
-unloadPkg(regclass)
-```
-
-```{r, results="asis"}
-xkabledply(pima_logit_confusion,"Confusion Matrix: Logit model 2, cutoff = 0.5")
-```
-
 We can use the Hosmer and Lemeshow Goodness of Fit test to evaluate logistic regression fit. 
 
 ```{r HosmerLemeshow8}
@@ -358,7 +421,47 @@ pima_logit_2pr2
 unloadPkg(pscl) 
 ```
 
-With the McFadden value of `r round(pima_logit_2pr2['McFadden'], digits=3)`, which is analgous to the coefficient of determination $R^2$, only about `r 100*round(pima_logit_2pr2['McFadden'], digits=2)`% of the variations in y is explained by the explanatory variables in the model. 
+With the McFadden value of `r round(pima_logit_2pr2['McFadden'], digits=3)`, which is analgous to the coefficient of determination $R^2$, only about `r 100*round(pima_logit_2pr2['McFadden'], digits=2)`% of the variations in y is explained by the explanatory variables in the model.
+
+#### Comparing to KNN results
+
+Now we can look at the accuracy and the confusion matrix of our logit model. 
+
+```{r confusionMatrix8}
+loadPkg(regclass)
+pima_logit_confusion = confusion_matrix(pima_logit)
+unloadPkg(regclass)
+```
+
+```{r, results="asis"}
+xkabledply(pima_logit_confusion,"Confusion Matrix: Logit model 2, cutoff = 0.5")
+```
+
+```{r by_dec}
+row_names <- c("Predicted No", "Predicted Yes")
+row_1 <- c(pima_logit_confusion[1]/pima_logit_confusion[3], pima_logit_confusion[2]/pima_logit_confusion[3])
+row_2 <- c(pima_logit_confusion[4]/pima_logit_confusion[6], pima_logit_confusion[5]/pima_logit_confusion[6])
+dec_vals <- rbind(row_1, row_2)
+dec_vals <- as.data.frame(dec_vals)
+names(dec_vals) <- row_names
+row.names(dec_vals) <- c("Actual No", "Actual Yes")
+dec_vals %>%
+  kable(caption = "Accuracy of logit model") %>%
+  kable_styling(bootstrap_options = c("striped", "hover"))
+```
+
+```{r get_percentages}
+true_no <- 100*dec_vals[1,1]
+fake_no <- 100*dec_vals[1,2]
+true_yes <- 100*dec_vals[2,2]
+fake_yes <- 100*dec_vals[2,1]
+```
+
+The logit model accurately predicts an actual `No` response for a `No` `r true_no`% of the time. The logit model accurately predicts an actual `Yes` response for a `Yes` `r true_yes`% of the time. This is compared to the "best" k value for the KNN model, which is reproduced below:  
+
+`r k_min_res`
+
+It seems the accuracy of these two models are flipped. The KNN is better at predicting the `No`s, and the logit model is better at predicted the `Yes`s. 
 
 
 
