@@ -2,7 +2,7 @@
 
 This repo contains a collection of Lydia Teinfalt's work for DATS 6101 Spring 2020 at GWU. You may contact me at lteinfalt@gwu.edu for more info.
 
-Also included is the work on the class project with fellow teammates Izzy Illari, Lucia Illari (loi2102@gwu.edu),Omar Qusous (oqusous@gwu.edu), and Obumneke Amadi (obumneke_amadi2@gwu.edu).
+Also included is the work on the class project with fellow teammates Izzy Illari (iti2103@gwu.edu), Lucia Illari (loi2102@gwu.edu),Omar Qusous (oqusous@gwu.edu), and Obumneke Amadi (obumneke_amadi2@gwu.edu).
 
 Note: Obumneke left part way through the project, but her work is still shown for the record. 
 
