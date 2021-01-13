@@ -6,5 +6,5 @@ Also included is the work on the class project with fellow teammates Izzy Illari
 
 Note: Obumneke left part way through the project, but her work is still shown for the record. 
 
-To see a live version of the final project write up please go here [here](https://userweb.jlab.org/~izzy/DATS6101_Spring2020/proj1_template_final.html).
+To see a live version of the final project write up please go [here](https://userweb.jlab.org/~izzy/DATS6101_Spring2020/proj1_template_final.html).
 
